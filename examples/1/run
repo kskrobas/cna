@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cna -i atoms37044.xyz -d 2.5 -tol -0.5 -aafcc -tolA 0.2 -th 8 -nb 12 -v -ofcc fccAtoms.xyz -ps -onfcc nfccAtoms.xyz
