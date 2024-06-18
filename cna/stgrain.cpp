@@ -43,6 +43,8 @@ bool StGrain::openFile(const string &fileName)
         return openXYZFile(fileName);
         }
 
+        errMsg(" unrecognized file format/extenion: "+fileName);
+
 return false;
 }
 //---------------------------------------------------------

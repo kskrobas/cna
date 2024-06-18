@@ -109,12 +109,12 @@ size_t nb=0;
                 }
 
                 if(scmd=="-ofcc"){
-                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval));
+                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::nxyz,EPNF::fcc));
                 continue;
                 }
 
                 if(scmd=="-ofcct"){
-                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz));
+                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz,EPNF::fcc));
                 continue;
                 }
 
@@ -129,12 +129,12 @@ size_t nb=0;
                 }
 
                 if(scmd=="-onfcc"){
-                    outFileNames.lattNegVerifiedAtoms.emplace_back(StFileNameType(sval));
+                    outFileNames.lattNegVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::nxyz,EPNF::nfcc));
                 continue;
                 }
 
                 if(scmd=="-onfcct"){
-                    outFileNames.lattNegVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz));
+                    outFileNames.lattNegVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz,EPNF::nfcc));
                 continue;
                 }
 
@@ -276,12 +276,13 @@ size_t nb=0;
                         else{
                         std::time_t datetime = std::time(nullptr);
                             fout<<"#ver: 0"<<endl;
-                            fout<<"#statistic data "<<endl;
+                            fout<<"#title: statistic data "<<endl;
                             fout<<"#date: "<<std::asctime(std::localtime(&datetime));
                             fout<<"#input: "<<inFileName<<endl;
                             fout<<"#totNumAtoms: "<<N<<endl;
                             fout<<"#size: 20"<<endl;
                             fout<<"#fcc atoms: "<<nOffcc<<endl;
+                            fout<<"#zbb atoms: "<<nOfzb<<endl;
                             fout<<"#n.type   abundance"<<endl;
 
                             for(size_t i=0;i<nN;i++)
@@ -317,7 +318,7 @@ size_t nb=0;
                 switch (fn.l_type){
                 case EPNF::fcc : ltype="fcc"; break;
                 case EPNF::zb  : ltype="zb";break;
-                default: ltype="unk";
+                default        : ltype="unk"; continue;
                 }
                 infoMsg("save "+ltype+" atoms");
             }
@@ -331,7 +332,7 @@ size_t nb=0;
                 switch (fn.l_type){
                 case EPNF::nfcc : ltype="non fcc"; break;
                 case EPNF::nzb  : ltype="non zb";break;
-                default: ltype="unk";
+                default         : ltype="unk";   continue;
                 }
                 infoMsg("save "+ltype+" atoms");
             }
