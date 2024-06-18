@@ -1,0 +1,12 @@
+README~
+./Debug/*.o
+./Release/*.o
+.gitignore~
+Debug/
+Release/
+Profile/
+test00/
+test01/
+test02/
+test02/*.xyz
+cna/cna.pro*

@@ -14,10 +14,10 @@ using namespace std;
 
 struct StOutFileNames{
 vector<StFileNameType> posVerifiedAtoms;
-vector<StFileNameType> fccVerifiedAtoms;
+vector<StFileNameType> lattVerifiedAtoms;
 vector<StFileNameType> negVerifiedAtoms;
-vector<StFileNameType> fccNegVerifiedAtoms;
-    bool empty(){ return posVerifiedAtoms.empty() && negVerifiedAtoms.empty() && fccVerifiedAtoms.empty() && fccNegVerifiedAtoms.empty(); }
+vector<StFileNameType> lattNegVerifiedAtoms;
+    bool empty(){ return posVerifiedAtoms.empty() && negVerifiedAtoms.empty() && lattVerifiedAtoms.empty() && lattNegVerifiedAtoms.empty(); }
 };
 //-----------------------------------------------------------------------------
 template<typename T>
@@ -66,8 +66,13 @@ size_t nb=0;
                 return 0;
                 }
 
-                if(scmd=="-aa"){
+                if(scmd=="-aafcc"){
                     grain.AAEnabled=true;
+                continue;
+                }
+
+                if(scmd=="-aazb"){
+                    grain.ZBAAEnabled=true;
                 continue;
                 }
 
@@ -104,22 +109,42 @@ size_t nb=0;
                 }
 
                 if(scmd=="-ofcc"){
-                    outFileNames.fccVerifiedAtoms.emplace_back(StFileNameType(sval));
+                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval));
                 continue;
                 }
 
                 if(scmd=="-ofcct"){
-                    outFileNames.fccVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz));
+                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz));
+                continue;
+                }
+
+                if(scmd=="-ozb"){
+                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::nxyz,EPNF::zb));
+                continue;
+                }
+
+                if(scmd=="-ozbt"){
+                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz,EPNF::zb));
                 continue;
                 }
 
                 if(scmd=="-onfcc"){
-                    outFileNames.fccNegVerifiedAtoms.emplace_back(StFileNameType(sval));
+                    outFileNames.lattNegVerifiedAtoms.emplace_back(StFileNameType(sval));
                 continue;
                 }
 
                 if(scmd=="-onfcct"){
-                    outFileNames.fccNegVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz));
+                    outFileNames.lattNegVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz));
+                continue;
+                }
+
+                if(scmd=="-onzb"){
+                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::nxyz,EPNF::nzb));
+                continue;
+                }
+
+                if(scmd=="-onzbt"){
+                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz,EPNF::nzb));
                 continue;
                 }
 
@@ -208,7 +233,7 @@ size_t nb=0;
         //auto cmp=[](const StAtom &a, const StAtom &b){return a.nOfn<b.nOfn;};
         vector<size_t> total_nOfn;
         const size_t N=grain.atoms.size();
-        size_t nOffcc=0;
+        size_t nOffcc=0,nOfzb=0;
         constexpr int nN=20;
 
                 total_nOfn.resize(nN);
@@ -217,6 +242,7 @@ size_t nb=0;
                 for(size_t i=0;i<N;i++){
                     total_nOfn.at(grain.atoms[i].nOfn)++;
                     nOffcc+=(size_t) grain.atoms[i].fcc;
+                    nOfzb+=(size_t) grain.atoms[i].zb;
                 }
 
                 if(printStat){
@@ -231,10 +257,12 @@ size_t nb=0;
 
                     cout<<endl; for(size_t i=0;i<45;i++) cout<<vline; cout<<"\n";
 
-                    cout<<"\n total number of atoms: "<<N;
 
+                    cout<<"\n total number of atoms: "<<N;
                     if(grain.AAEnabled)
                         cout<<"\n fcc atoms : "<<nOffcc<<endl;
+                    if(grain.ZBAAEnabled)
+                        cout<<"\n zb atoms : "<<nOfzb<<endl;
 
                     cout<<endl;
                 }
@@ -247,9 +275,11 @@ size_t nb=0;
                         }
                         else{
                         std::time_t datetime = std::time(nullptr);
+                            fout<<"#ver: 0"<<endl;
                             fout<<"#statistic data "<<endl;
                             fout<<"#date: "<<std::asctime(std::localtime(&datetime));
                             fout<<"#input: "<<inFileName<<endl;
+                            fout<<"#totNumAtoms: "<<N<<endl;
                             fout<<"#size: 20"<<endl;
                             fout<<"#fcc atoms: "<<nOffcc<<endl;
                             fout<<"#n.type   abundance"<<endl;
@@ -270,25 +300,45 @@ size_t nb=0;
         if(verb && !outFileNames.negVerifiedAtoms.empty()){ infoMsg("save nv. outcomes");}
 
         for(auto & fn: outFileNames.negVerifiedAtoms)
-            saveAtoms(fn.fileName,grain,nb,fn.type,EPNF::neg);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::neg);
 
 
         if(verb && !outFileNames.posVerifiedAtoms.empty() ){ infoMsg("save pv. outcomes");}
 
         for(auto & fn: outFileNames.posVerifiedAtoms)
-            saveAtoms(fn.fileName,grain,nb,fn.type,EPNF::pos);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::pos);
 
 
-        if(verb && !outFileNames.fccVerifiedAtoms.empty()){infoMsg("save fcc outcomes");}
-
-        for(auto &fn:outFileNames.fccVerifiedAtoms)
-            saveAtoms(fn.fileName,grain,nb,fn.type,EPNF::fcc);
 
 
-        if(verb && !outFileNames.fccNegVerifiedAtoms.empty()){infoMsg("save non fcc outcomes");}
+        for(auto &fn:outFileNames.lattVerifiedAtoms){
+            if(verb){
+            std::string ltype;
+                switch (fn.l_type){
+                case EPNF::fcc : ltype="fcc"; break;
+                case EPNF::zb  : ltype="zb";break;
+                default: ltype="unk";
+                }
+                infoMsg("save "+ltype+" atoms");
+            }
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type);
+        }
 
-        for(auto &fn:outFileNames.fccNegVerifiedAtoms)
-            saveAtoms(fn.fileName,grain,nb,fn.type,EPNF::nfcc);
+
+        for(auto &fn:outFileNames.lattNegVerifiedAtoms){
+            if(verb){
+            std::string ltype;
+                switch (fn.l_type){
+                case EPNF::nfcc : ltype="non fcc"; break;
+                case EPNF::nzb  : ltype="non zb";break;
+                default: ltype="unk";
+                }
+                infoMsg("save "+ltype+" atoms");
+            }
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type);
+        }
+
+
 
         //-----------------------------------------------------------------------------------------
         cout<<endl;

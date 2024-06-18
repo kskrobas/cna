@@ -28,13 +28,18 @@
 #endif
 
 
-inline cpos sqr(cpos &x){return x*x;}
+inline position sqr(cpos &x){return x*x;}
 
 
+std::ostream & operator << (std::ostream & o, const StVector &v)
+{ return o<<v.x<<"    "<<v.y<<"    "<<v.z; }
+
+
+/*
 void StRotationMatrix::buildMatrix(const StAxis &axis_)
 {
 
-}
+}*/
 
 ///
 ///https://en.wikipedia.org/wiki/Rotation_matrix
@@ -160,13 +165,13 @@ return StVector(d_1,d_2,d_3);
 
 //-----------------------------------------------------------------------------
 
-cpos cosa(const StVector &a, const StVector &b)
+position cosa(const StVector &a, const StVector &b)
 {
 cpos sum=a.x*b.x+a.y*b.y+a.z*b.z;
 return (position) sum/(a.getModule()*b.getModule());
 }
 
-cpos tripleProduct(StVector &a, StVector &b, StVector &c)
+position tripleProduct(StVector &a, StVector &b, StVector &c)
 {
     /// A*(BxC)
 return a.x*(b.y*c.z-b.z*c.y)+a.y*(b.z*c.x-b.x*c.z)+a.z*(b.x*c.y-b.y*c.x);

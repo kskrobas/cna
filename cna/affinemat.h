@@ -21,9 +21,11 @@
 #define AFFINEMAT_H
 
 #include <cmath>
+#include <ostream>
 
 typedef double position;
 typedef const position cpos;
+
 
 //-----------------------------------------------------------------------------
 
@@ -89,7 +91,12 @@ struct StVector{
       double getModule()const { return sqrt(x*x+y*y+z*z);}
       bool isZero() const { return   (x==0) && (y==0) && (z==0); }
 
+      friend std::ostream & operator << (std::ostream & o, const StVector &v);
+
+
 };
+
+
 
 
 //---------------------------------------------------------------------------
@@ -135,7 +142,7 @@ position theta;
 
 bool on=false;
 
-    void buildMatrix(const StAxis &axis_);
+    //void buildMatrix(const StAxis &axis_);
     void buildMatrix(const StAxis &axis_,cpos &sinA, cpos &cosA);
     StVector operator*(const StVector &v);
 //StAtom operator*=(S);
@@ -153,10 +160,10 @@ private:
 //-----------------------------------------------------------------------------
 
 
-cpos cosa(const StVector &a, const StVector &b);
+position cosa(const StVector &a, const StVector &b);
 StVector crossProduct(const StVector &a, const StVector &b);
 StVector crossProductTriple(StVector &a, StVector &b, StVector &c);
-cpos     tripleProduct(StVector &a, StVector &b, StVector &c);
+position     tripleProduct(StVector &a, StVector &b, StVector &c);
 position projLength(const StAxis &a, const StVector &b);
 position pointAxisDistance(const StAxis &axis,const StVector &point);
 position pointPlaneDistance(const StAxis &axis,const StVector &point);

@@ -7,6 +7,12 @@
 
 //-----------------------------------------------------------------------------
 inline position sqr(cpos &x){return x*x;}
+
+std::ostream &operator <<(std::ostream &o, const StAtom &v )
+{
+return    o<<v.x<<"    "<<v.y<<"    "<<v.z;
+}
+
 //-----------------------------------------------------------------------------
 int StGrain::findAtomName(const string &aname__)
 {
@@ -78,7 +84,7 @@ position cx,cy,cz;  // center position
             int atype;
             std::function<StAtom(position &, position &, position &, int &, int &) > createAtom;
 
-                    if(AAEnabled){
+                    if(AAEnabled || ZBAAEnabled){
                      createAtom=[](position &x, position &y, position &z , int &at, int &id)
                                     { return StAtom(x,y,z,at,id);} ;
                     }else{
@@ -165,7 +171,7 @@ CProgress progress;
 
 std::function<void (StAtom &a, StAtom &b)> updateNOfN;
 
-                if(grain.AAEnabled){
+                if(grain.AAEnabled || grain.ZBAAEnabled){
                     updateNOfN=[](StAtom &a, StAtom &b)
                                 { a.nOfn++; b.nOfn++; a.nID.push_back(b.id); b.nID.push_back(a.id);};
                 }
@@ -224,12 +230,19 @@ std::function<void (StAtom &a, StAtom &b)> updateNOfN;
                 cout<<"\r";
                 cout.flush();
 
-                if(grain.AAEnabled)
-                    //for(auto &atom: grain.atoms){
+                if(grain.AAEnabled){
                         #pragma omp parallel for
                         for(size_t i=0; i<N; i++)
                             grain.atoms[i].FCC_NN_Angle_Analysis(grain,toleranceA);
-                    //}
+                }
+                else{
+                    if(grain.ZBAAEnabled){
+                        #pragma omp parallel for
+                        for(size_t i=0;i<N;i++)
+                            grain.atoms[i].ZB_NN_Angle_Analysis(grain,toleranceA);
+                    }
+                }
+
 
 return true;
 }
@@ -265,10 +278,18 @@ CProgress progress;
                     else{
                         if(pnf==EPNF::fcc)
                             {   np_condition=[](const StAtom &a){ return a.fcc;} ;
-                            fout<<"--- fcc verified atoms ---"<<endl; }
+                            fout<<"--- FCC verified atoms ---"<<endl; }
                         else
+                            if(pnf==EPNF::nfcc)
                             {   np_condition=[](const StAtom &a){ return !a.fcc;} ;
-                            fout<<"--- fcc verified atoms ---"<<endl; }
+                                fout<<"--- non FCC verified atoms ---"<<endl; }
+                            else
+                                if(pnf==EPNF::zb)
+                                {   np_condition=[](const StAtom &a){ return a.zb;} ;
+                                fout<<"--- ZB verified atoms ---"<<endl; }
+                                else
+                                {   np_condition=[](const StAtom &a){ return !a.zb;} ;
+                                    fout<<"--- non ZB verified atoms ---"<<endl; }
                         }
             }
 
@@ -341,22 +362,36 @@ cpos tol_180min=1-toleranceA;
 
         fcc= (nOf_180==1  && nOf_90==2 && nOf_60==8);
 }
+//-----------------------------------------------------------------------------
+void StAtom::ZB_NN_Angle_Analysis(const StGrain &grain, cpos &toleranceA)
+{
+            if(nOfn!=4) return;
+
+const auto &atoms=grain.atoms;
+auto & refAtom=atoms[nID[0]];
+StVector ref(refAtom.x-x,refAtom.y-y,refAtom.z-z);
+StVector b;
+double vc;
+
+size_t nOf_109=0;
+
+cpos tol_109min=1.0/3.0-toleranceA;
+cpos tol_109max=1.0/3.0+toleranceA;
 
 
+            for(size_t i=1;i<4;i++){
+                b.x=atoms[nID[i]].x-x;
+                b.y=atoms[nID[i]].y-y;
+                b.z=atoms[nID[i]].z-z;
+                vc=std::fabs(cosa(ref,b));
 
+                if(tol_109min<vc && vc<tol_109max)
+                    nOf_109++;
 
+            }
 
-
-
-
-
-
-
-
-
-
-
-
+            zb=(nOf_109 == 3);
+}
 
 
 
