@@ -1,0 +1,86 @@
+SHELL=/bin/bash
+objdir=objrel
+bindir=../bin
+cpp=g++-12
+
+cppflags=-fopenmp -std=c++17 -O3 -march=native -m64 -fPIC -pipe -Wno-unused-result -Wno-format-security -Wno-return-type
+cpplibs=-L -lpthread 
+target=$(bindir)/cna
+obj=$(objdir)/affinemat.o \
+	$(objdir)/colormsg.o \
+	$(objdir)/cprogress.o \
+	$(objdir)/help.o  \
+	$(objdir)/stgrain.o \
+	$(objdir)/main.o 
+	   	
+
+
+.PHONY: all clean install  sysinstall
+
+
+all:  dirs $(target)
+
+dirs: $(objdir) $(bindir)
+	@echo
+	@echo -n -e "\e[30;44m COMPILATION ....       \033[0m"
+	@touch info.h
+	@echo
+
+
+$(objdir):
+	@echo "create objrel directory"
+	mkdir -p $(objdir)
+	
+$(bindir):
+	@echo "create bin directory"
+	mkdir -p $(bindir)
+	
+	
+	
+	
+$(target): $(obj)
+	@echo -n -e "\e[30;43m BUILDING ....          \033[0m"
+	@echo
+	$(cpp) -o $(target)  $(obj)		$(cppflags) $(cpplibs)
+	@if [ $$? -eq 0 ]; then  echo " "; echo -n -e "\e[30;42m SUCCESSFUL compilation \033[0m" ; else echo " "; echo "\e[30;41m ERROR(S) detected\033[0m"; fi;
+	@echo
+	@echo
+	
+	 
+$(objdir)/affinemat.o:affinemat.cpp affinemat.h
+	$(cpp) -c $< $(cppflags)  -o $@
+		
+$(objdir)/colormsg.o: colormsg.cpp colormsg.h
+	$(cpp) -c -DTCOLOR -DUC $< $(cppflags)  -o $@	
+	
+$(objdir)/cprogress.o: cprogress.cpp cprogress.h	
+	$(cpp) -c -DTCOLOR -DUC $< $(cppflags)  -o $@		
+			
+$(objdir)/help.o: help.cpp help.h	
+	$(cpp) -c $< $(cppflags)  -o $@	
+	
+$(objdir)/main.o: main.cpp	
+	$(cpp) -c $< $(cppflags)  -o $@	
+
+$(objdir)/stgrain.o: stgrain.cpp stgrain.h
+	$(cpp) -c $< $(cppflags)  -o $@	
+	
+	
+	
+
+
+
+	
+#../../fparser.o: ../../fparser/fparser.cc	
+#	$(cpp) -c $< $(cppflags)  -o $@
+	
+	
+clean:
+	rm -f $(target) $(objdir)/*
+install:
+	@dt=$$(date +'%Y%m%d-%H%M%S') && if [ -f $(HOME)/bin/npcl ]; then mv $(HOME)/bin/npcl $(HOME)/bin/$$dt-npcl; fi;
+	@if [ ! -f $(HOME)/bin/scFact.sft ]; then cp ../scFact.sft $(HOME)/bin/.; fi;
+	cp $(target) $(HOME)/bin/.	
+	
+sysinstall:
+	cp $(target) /usr/bin/.

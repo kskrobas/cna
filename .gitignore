@@ -10,3 +10,5 @@ test01/
 test02/
 test02/*.xyz
 cna/cna.pro*
+cna/objrel/*
+bin/

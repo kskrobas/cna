@@ -1,9 +1,10 @@
 #include "stgrain.h"
 #include "colormsg.h"
 #include "affinemat.h"
+#include "cprogress.h"
 #include <omp.h>
 #include <functional>
-#include <cprogress.h>
+
 
 //-----------------------------------------------------------------------------
 inline position sqr(cpos &x){return x*x;}
