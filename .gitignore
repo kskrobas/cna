@@ -11,4 +11,8 @@ test02/
 test02/*.xyz
 cna/cna.pro*
 cna/objrel/*
+cna/Makefile.rel~
 bin/
+examples/1/*.xyz
+examples/2/*.xyz
+

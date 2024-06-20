@@ -247,15 +247,25 @@ size_t nb=0;
 
                 //-----------------------------------
                 if(printStat){
-                    infoMsg(" statistic data :");
+                    infoMsg("statistic data :");
 
                     for(size_t i=0;i<nN;i++){
-                        if(i%5==0)
-                        { cout<<endl<<" "; for(size_t i=0;i<45;i++) cout<<vline; cout<<"\n┃"; }
+                        if(i%5==0){
+                            if(i==0)
+                                { cout<<endl<<"┏"; for(size_t i=0;i<42;i++) cout<<vline; cout<<"┓\n┃"; }
+                            else
+                            {     cout<<endl<<"┣"; for(size_t i=0;i<42;i++) cout<<vline; cout<<"┫\n┃"; }
+                        }
 
-                        cout<<" "<<setw(3)<<i<<" : "<<setw(8)<<total_nOfn[i]<<"  ┃";
+
+                        cout<<" "<<setw(3)<<i<<" : "<<setw(8);
+                        if(i==nb)
+                            cout<<cgreen<<setw(8)<<total_nOfn[i]<<cdef" ┃";
+                        else
+                            cout<<total_nOfn[i]<<" ┃";
                     }
-                cout<<endl<<" "; for(size_t i=0;i<45;i++) cout<<vline; cout<<"\n";
+
+                    cout<<endl<<"┗"; for(size_t i=0;i<42;i++) cout<<vline; cout<<"┛\n";
                 //------------------------------------
 
                 for(size_t i=0;i<nN;i++)
