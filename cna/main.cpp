@@ -139,12 +139,12 @@ size_t nb=0;
                 }
 
                 if(scmd=="-onzb"){
-                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::nxyz,EPNF::nzb));
+                    outFileNames.lattNegVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::nxyz,EPNF::nzb));
                 continue;
                 }
 
                 if(scmd=="-onzbt"){
-                    outFileNames.lattVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz,EPNF::nzb));
+                    outFileNames.lattNegVerifiedAtoms.emplace_back(StFileNameType(sval,EFTYPE::txyz,EPNF::nzb));
                 continue;
                 }
 
@@ -233,7 +233,7 @@ size_t nb=0;
         //auto cmp=[](const StAtom &a, const StAtom &b){return a.nOfn<b.nOfn;};
         vector<size_t> total_nOfn;
         const size_t N=grain.atoms.size();
-        size_t nOffcc=0,nOfzb=0;
+        size_t nOffcc=0,nOfzb=0,negAtoms=0;
         constexpr int nN=20;
 
                 total_nOfn.resize(nN);
@@ -245,6 +245,7 @@ size_t nb=0;
                     nOfzb+=(size_t) grain.atoms[i].zb;
                 }
 
+                //-----------------------------------
                 if(printStat){
                     infoMsg(" statistic data :");
 
@@ -254,17 +255,21 @@ size_t nb=0;
 
                         cout<<" "<<setw(3)<<i<<" : "<<setw(8)<<total_nOfn[i]<<"  ┃";
                     }
+                cout<<endl<<" "; for(size_t i=0;i<45;i++) cout<<vline; cout<<"\n";
+                //------------------------------------
 
-                    cout<<endl; for(size_t i=0;i<45;i++) cout<<vline; cout<<"\n";
+                for(size_t i=0;i<nN;i++)
+                    if(i!=nb)  negAtoms+=total_nOfn[i];
 
+                cout<<"\n total number of atoms: "<<N;
+                cout<<"\n number of neg. ver. atoms: "<<negAtoms;
 
-                    cout<<"\n total number of atoms: "<<N;
                     if(grain.AAEnabled)
                         cout<<"\n fcc atoms : "<<nOffcc<<endl;
                     if(grain.ZBAAEnabled)
                         cout<<"\n zb atoms : "<<nOfzb<<endl;
 
-                    cout<<endl;
+                cout<<endl;
                 }
 
                 if(!outStatFileName.empty()){
@@ -281,6 +286,7 @@ size_t nb=0;
                             fout<<"#input: "<<inFileName<<endl;
                             fout<<"#totNumAtoms: "<<N<<endl;
                             fout<<"#size: 20"<<endl;
+                            fout<<"#nv. atoms: "<<negAtoms<<endl;
                             fout<<"#fcc atoms: "<<nOffcc<<endl;
                             fout<<"#zbb atoms: "<<nOfzb<<endl;
                             fout<<"#n.type   abundance"<<endl;
