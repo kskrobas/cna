@@ -98,6 +98,7 @@ public:
 
 private:
     bool openXYZFile(const string &fileName);
+    bool openLMPFile(const string &fileName);
 
     int findAtomName(const string &aname__);
 };

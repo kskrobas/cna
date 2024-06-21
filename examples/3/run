@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cna -i  F1.lmp -d 2.5 -tol 0.75 -nb 12 -v  -ont nF1.xyz  -ps -th 8 -aafcc -tolA 0.2 -onfcct negFccF1.xyz  -ofcct posFccF1.xyz

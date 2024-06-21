@@ -10,8 +10,10 @@ test01/
 test02/
 test02/*.xyz
 cna/cna.pro*
+cna/qcna*
 cna/objrel/*
 cna/Makefile.rel~
+cna/Makefile.rel12*
 bin/
 examples/1/*.xyz
 examples/2/*.xyz

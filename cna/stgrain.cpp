@@ -4,6 +4,25 @@
 #include "cprogress.h"
 #include <omp.h>
 #include <functional>
+#include <sstream>
+
+template<typename T>
+vector<T>  split(const T & str, const T & delimiters)
+{
+vector<T> v;
+typename T::size_type start = 0;
+auto pos = str.find_first_of(delimiters, start);
+
+        while(pos != T::npos) {
+            if(pos != start) // ignore empty tokens
+                v.emplace_back(str, start, pos - start);
+            start = pos + 1;
+            pos = str.find_first_of(delimiters, start);
+        }
+        if(start < str.length()) // ignore trailing delimiter
+            v.emplace_back(str, start, str.length() - start); // add what's left of the string
+return v;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -29,8 +48,6 @@ int apos=0;
 
 return -1;
 }
-
-
 //---------------------------------------------------------
 StGrain::StGrain()
 {
@@ -41,6 +58,9 @@ bool StGrain::openFile(const string &fileName)
 {
         if(fileName.find(".xyz")!=string::npos){
         return openXYZFile(fileName);
+        }
+        if(fileName.find(".lmp")!=string::npos){
+        return openLMPFile(fileName);
         }
 
         errMsg(" unrecognized file format/extenion: "+fileName);
@@ -143,6 +163,135 @@ cpos iN=1.0/arows;
                 atoms[i].z-=cz;
                 atoms[i].set_r2();
             }
+            return true;
+}
+//-----------------------------------------------------------------------------
+bool StGrain::openLMPFile(const string &fileName)
+{
+fstream fin(fileName,ios::in);
+
+        if(!fin){
+            errMsg(" file doesn't exist");
+        return false;
+        }
+
+CProgress progress;
+int nAtoms,row=2,atypes,id=-1;
+position cx,cy,cz;  // center position
+
+            cx=cy=cz=0;
+
+
+            try{
+            std::string fline;
+
+                fin.exceptions(ifstream::failbit | ifstream::badbit | ifstream::eofbit);
+                //ignore 1st, 2nd lines
+                std::getline(fin,fline);
+                std::getline(fin,fline);
+                ////////////////////////
+
+                do{
+                    row++;
+                    std::getline(fin,fline);
+                    if(fline.empty()) continue;
+
+                vector<string> toks{split<string>(fline," \t")};
+
+                    if(toks[0]=="Atoms")
+                        break;
+
+                    if( toks.size()<2 || toks.size()>3)
+                        continue;
+
+
+                    if(toks[1]=="atoms"){
+                        nAtoms=std::stoi(toks[0]);
+                    continue;
+                    }
+
+                    if(toks[1]=="atom"){
+                        atypes=std::stoi(toks[0]);
+                        atomTypes.resize(atypes);
+
+                        for(int i=0;i<atypes;i++)
+                            atomTypes[i].name=std::to_string(i+1);
+
+                    continue;
+                    }
+
+                } while(true);
+
+
+                //ignore the line
+                std::getline(fin,fline);
+
+            int atype;
+            position x,y,z;
+            std::function<StAtom(position &, position &, position &, int &, int &) > createAtom;
+
+                    if(AAEnabled || ZBAAEnabled){
+                     createAtom=[](position &x, position &y, position &z , int &at, int &id)
+                                    { return StAtom(x,y,z,at,id);} ;
+                    }else{
+                     createAtom=[](position &x, position &y, position &z , int &at, int &id)
+                                       { (void) id; return StAtom(x,y,z,at);} ;
+                    }
+
+                atoms.reserve(nAtoms);
+                row++;
+
+                for(int atom=0;atom<nAtoms;atom++,row++){
+                    fin>>id; // eof error detection
+
+
+                    std::getline(fin,fline);
+                vector<string> toks{split<string>(fline," \t")};
+
+                    atype=std::stoi(toks[0])-1;
+                    x=std::stod(toks[1]);
+                    y=std::stod(toks[2]);
+                    z=std::stod(toks[3]);
+
+                    cx+=x; cy+=y; cz+=z;
+
+                    atoms.emplace_back(createAtom(x,y,z,atype,atom));
+                }
+
+                atoms.shrink_to_fit();
+            }
+            catch(std::ifstream::failure &e){
+            std::stringstream sstream;
+                sstream<<" exceptions during file procesing, row: "<<row<<", "<<e.what();
+                errMsg(sstream.str());
+                fin.close();
+                progress.stop();
+            return false;
+            }
+            catch(const std::invalid_argument &ia){
+            std::stringstream sstream;
+                sstream<<" invalid argument exception, row:  "<<row<<", "<<ia.what();
+                errMsg(sstream.str());
+                fin.close();
+                progress.stop();
+            return false;
+            }
+
+
+
+cpos iN=1.0/nAtoms;
+
+            cx*=iN; cy*=iN; cz*=iN;
+
+            omp_set_num_threads(threads);
+            #pragma omp parallel for
+            for(int i=0;i<nAtoms;i++){
+                atoms[i].x-=cx;
+                atoms[i].y-=cy;
+                atoms[i].z-=cz;
+                atoms[i].set_r2();
+            }
+
 return true;
 }
 
@@ -309,6 +458,9 @@ CProgress progress;
 
             for(size_t i=0;i<numOfatoms;i++,progress++){
                 if(np_condition(atoms[i])){
+                    //if(! i%10) cerr<<endl;
+                    //cerr<<i<<"  "<<atoms[i].atype<<", "<<atomNT(atoms[i])<<"  ";
+
                     fout<<atomNT(atoms[i])<<"    "
                         <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
                         <<"    "<<atoms[i].nOfn<<"    "<<atoms[i].fcc<<endl;
