@@ -15,6 +15,7 @@ void help()
     cerr<<" -ps  - print statistic\n";
     cerr<<" -psf - print statistic to file\n";
     cerr<<" -d    <real number> - average distance to neighbor \n";
+    cerr<<" -i    <fileName> - input file name \n";
     cerr<<" -tol  <real number> - tolerance of distance \n";
     cerr<<" -tolA <real number> - tolerance of angle \n";
     cerr<<" -nb  <int number>  - number of neighbors\n";

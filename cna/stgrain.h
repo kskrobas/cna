@@ -22,6 +22,8 @@ ostream & operator <<(ostream &o,const StAtom &a);
 enum EFTYPE{nxyz,txyz};
 enum EPNF{pos,neg,fcc,nfcc,zb,nzb};
 
+
+//-----------------------------------------------------------------------------
 struct StFileNameType{
 
 string fileName;
@@ -33,6 +35,23 @@ EPNF   l_type;
     StFileNameType(string fn__,EFTYPE type__,EPNF ltype__)
         :fileName(fn__),f_type(type__),l_type(ltype__){ }
 
+    StFileNameType(EFTYPE type__,EPNF ltype__)
+        :f_type(type__),l_type(ltype__){ }
+
+    void operator() (EFTYPE type__,EPNF ltype__)
+            { f_type=type__; l_type=ltype__; }
+
+};
+
+//-----------------------------------------------------------------------------
+struct StBox{
+enum ETYPE{IGN,CUB,CYL,SPH} btype=IGN;  //default ignore box boundaries
+    union{
+        struct{position xlo,xhi,ylo,yhi,zlo,zhi;};
+        position bounds[6];
+    };
+
+    bool isAtomInside(const StAtom &atom) const ;
 };
 
 //-----------------------------------------------------------------------------
@@ -110,6 +129,7 @@ double atomDistR2(const StAtom &a, const StAtom &b);
 bool CNA(StGrain &grain,cpos &distance, cpos &tolerance, cpos &toleranceA);
 
 
-bool saveAtoms(string &fileName,const StGrain &grain, const size_t nOfB,EFTYPE ftype, EPNF pnf);
+bool saveAtoms(string &fileName, const StGrain &grain, const size_t nOfB,
+               EFTYPE ftype, EPNF pnf, const StBox &box);
 
 #endif // STGRAIN_H

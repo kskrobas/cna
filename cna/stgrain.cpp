@@ -401,7 +401,7 @@ return true;
 
 
 //-----------------------------------------------------------------------------
-bool saveAtoms(string &fileName, const StGrain &grain, const size_t nOfB, EFTYPE ftype, EPNF pnf)
+bool saveAtoms(string &fileName, const StGrain &grain, const size_t nOfB, EFTYPE ftype, EPNF pnf,const StBox &box)
 {
 fstream fout(fileName,ios::out);
 
@@ -456,17 +456,27 @@ CProgress progress;
                 progress.start(numOfatoms);
             }
 
-            for(size_t i=0;i<numOfatoms;i++,progress++){
-                if(np_condition(atoms[i])){
-                    //if(! i%10) cerr<<endl;
-                    //cerr<<i<<"  "<<atoms[i].atype<<", "<<atomNT(atoms[i])<<"  ";
-
-                    fout<<atomNT(atoms[i])<<"    "
-                        <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
-                        <<"    "<<atoms[i].nOfn<<"    "<<atoms[i].fcc<<endl;
-                    nOfrows++;
+            if(box.btype==StBox::IGN){ //
+                for(size_t i=0;i<numOfatoms;i++,progress++){
+                    if(np_condition(atoms[i])){
+                        fout<<atomNT(atoms[i])<<"    "
+                            <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
+                            <<"    "<<atoms[i].nOfn<<"    "<<atoms[i].fcc<<endl;
+                        nOfrows++;
+                    }
                 }
             }
+            else{
+                for(size_t i=0;i<numOfatoms;i++,progress++){
+                    if(np_condition(atoms[i]))
+                        if(box.isAtomInside(atoms[i])){
+                            fout<<atomNT(atoms[i])<<"    "
+                                <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
+                                <<"    "<<atoms[i].nOfn<<"    "<<atoms[i].fcc<<endl;
+                            nOfrows++;
+                        }
+                    }
+                }
 
 
             fout.seekg(0);
@@ -548,14 +558,12 @@ cpos tol_109max=1.0/3.0+toleranceA;
             zb=(nOf_109 == 3);
 }
 
+//-----------------------------------------------------------------------------
+bool StBox::isAtomInside(const StAtom &atom) const
+{
+bool testX=( (atom.x>xlo) & (atom.x<xhi) );
+bool testY=( (atom.y>ylo) & (atom.y<yhi) );
+bool testZ=( (atom.z>zlo) & (atom.z<zhi) );
 
-
-
-
-
-
-
-
-
-
-
+return testX && testY && testZ;
+}

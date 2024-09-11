@@ -1,0 +1,23 @@
+#-i ave-150-200-50.lmp -d 2.5 -tol 0.75 -nb 12 -v  -ont ndis.xyz  -ps -th 8 -aafcc -tolA 0.2 -onfcct negFccDis.xyz  -ofcct posFccDis.xyz
+
+
+box cuboid -33 33 -34 34 -34 34
+ifile ave-150-200-50.lmp
+avedist  2.5    
+toldist 0.75
+tolang  0.2
+nbnum  12
+print stat
+threads 8
+mode fcc
+# -on 
+save  n negverBox.xyz
+# -onfcc
+save  nfcc  negverfccBox.nxyz
+# -onfcct
+save  nfcct negverfccBox.txyz
+
+
+
+
+

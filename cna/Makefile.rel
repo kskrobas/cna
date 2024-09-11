@@ -11,6 +11,7 @@ obj=$(objdir)/affinemat.o \
 	$(objdir)/cprogress.o \
 	$(objdir)/help.o  \
 	$(objdir)/stgrain.o \
+	$(objdir)/inparams.o \
 	$(objdir)/main.o 
 	   	
 
@@ -65,8 +66,10 @@ $(objdir)/main.o: main.cpp
 $(objdir)/stgrain.o: stgrain.cpp stgrain.h
 	$(cpp) -c $< $(cppflags)  -o $@	
 	
+#$(objdir)/inparams.o \	
 	
-	
+$(objdir)/inparams.o: inparams.cpp inparams.h
+	$(cpp) -c $< $(cppflags)  -o $@		
 
 
 

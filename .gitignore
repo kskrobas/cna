@@ -9,6 +9,9 @@ test00/
 test01/
 test02/
 test02/*.xyz
+test03/
+test03/*.xyz
+test04/*
 cna/cna.pro*
 cna/qcna*
 cna/objrel/*

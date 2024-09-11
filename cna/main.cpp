@@ -1,42 +1,16 @@
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
-#include"stgrain.h"
-#include"colormsg.h"
-#include"help.h"
+#include "stgrain.h"
+#include "colormsg.h"
+#include "help.h"
+#include "inparams.h"
 
 using namespace std;
 
 #define vline "━━"
 
-//-----------------------------------------------------------------------------
 
-
-struct StOutFileNames{
-vector<StFileNameType> posVerifiedAtoms;
-vector<StFileNameType> lattVerifiedAtoms;
-vector<StFileNameType> negVerifiedAtoms;
-vector<StFileNameType> lattNegVerifiedAtoms;
-    bool empty(){ return posVerifiedAtoms.empty() && negVerifiedAtoms.empty() && lattVerifiedAtoms.empty() && lattNegVerifiedAtoms.empty(); }
-};
-//-----------------------------------------------------------------------------
-template<typename T>
-vector<T>  split(const T & str, const T & delimiters)
-{
-vector<T> v;
-typename T::size_type start = 0;
-auto pos = str.find_first_of(delimiters, start);
-
-        while(pos != T::npos) {
-            if(pos != start) // ignore empty tokens
-                v.emplace_back(str, start, pos - start);
-            start = pos + 1;
-            pos = str.find_first_of(delimiters, start);
-        }
-        if(start < str.length()) // ignore trailing delimiter
-            v.emplace_back(str, start, str.length() - start); // add what's left of the string
-return v;
-}
 //-----------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
@@ -46,8 +20,10 @@ int main(int argc, char *argv[])
         return 1;
         }
 
-StGrain grain;
 
+
+StGrain grain;
+StBox box;
 string inFileName,outStatFileName;
 StOutFileNames outFileNames;
 bool verb=false,printStat=false;
@@ -55,12 +31,39 @@ string scmd,sval;
 position tol=-1,dst=-1,tolA=-1;
 size_t nb=0;
 
+StInParams inParams;
+
+        inParams.grain=&grain;
+        inParams.inFileName=&inFileName;
+        inParams.outStatFileName=&outStatFileName;
+        inParams.outFileNames=&outFileNames;
+        inParams.printStat=&printStat;
+        inParams.tol=&tol;
+        inParams.dst=&dst;
+        inParams.tolA=&tolA;
+        inParams.nb=&nb;
+        inParams.box=&box;
+
+
         try{
 
             for(int i=1;i<argc;){
                 scmd=std::string(argv[i++]);
 
                 //------------------------
+                if(scmd=="-inp"){
+                    sval=std::string(argv[i++]);
+
+                    if(!parseInputScript(sval,inParams,verb))
+                        return 1;
+
+                continue;
+                }
+
+                //------------------------
+
+
+
                 if(scmd=="-h"){
                     help();
                 return 0;
@@ -317,13 +320,13 @@ size_t nb=0;
         if(verb && !outFileNames.negVerifiedAtoms.empty()){ infoMsg("save nv. outcomes");}
 
         for(auto & fn: outFileNames.negVerifiedAtoms)
-            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::neg);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::neg,box);
 
 
         if(verb && !outFileNames.posVerifiedAtoms.empty() ){ infoMsg("save pv. outcomes");}
 
         for(auto & fn: outFileNames.posVerifiedAtoms)
-            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::pos);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::pos,box);
 
 
 
@@ -338,7 +341,7 @@ size_t nb=0;
                 }
                 infoMsg("save "+ltype+" atoms");
             }
-            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type,box);
         }
 
 
@@ -352,7 +355,7 @@ size_t nb=0;
                 }
                 infoMsg("save "+ltype+" atoms");
             }
-            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type,box);
         }
 
 
