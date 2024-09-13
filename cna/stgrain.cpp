@@ -72,10 +72,10 @@ bool StGrain::openXYZFile(const string &fileName)
 {
 fstream fin(fileName,ios::in);
 
-        if(!fin){
-            errMsg(" file doesn't exist");
-        return false;
-        }
+            if(!fin){
+                errMsg(" file doesn't exist: "+fileName);
+            return false;
+            }
 
 CProgress progress;
 int row=0,arows=-1;
@@ -171,7 +171,7 @@ bool StGrain::openLMPFile(const string &fileName)
 fstream fin(fileName,ios::in);
 
         if(!fin){
-            errMsg(" file doesn't exist");
+            errMsg(" file doesn't exist: "+fileName);
         return false;
         }
 
@@ -354,7 +354,6 @@ std::function<void (StAtom &a, StAtom &b)> updateNOfN;
                         }
                         #pragma omp critical
                         progress++;
-
                     }
 
 
@@ -375,7 +374,6 @@ std::function<void (StAtom &a, StAtom &b)> updateNOfN;
                         #pragma omp critical
                         progress++;
                     }
-
                 }
 
                 progress.stop();
