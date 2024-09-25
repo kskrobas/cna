@@ -81,8 +81,7 @@ $(objdir)/inparams.o: inparams.cpp inparams.h
 clean:
 	rm -f $(target) $(objdir)/*
 install:
-	@dt=$$(date +'%Y%m%d-%H%M%S') && if [ -f $(HOME)/bin/npcl ]; then mv $(HOME)/bin/npcl $(HOME)/bin/$$dt-npcl; fi;
-	@if [ ! -f $(HOME)/bin/scFact.sft ]; then cp ../scFact.sft $(HOME)/bin/.; fi;
+	@dt=$$(date +'%Y%m%d-%H%M%S') && if [ -f $(HOME)/bin/cna ]; then mv $(HOME)/bin/cna $(HOME)/bin/$$dt-cna; fi;
 	cp $(target) $(HOME)/bin/.	
 	
 sysinstall:
