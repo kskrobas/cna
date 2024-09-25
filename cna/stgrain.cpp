@@ -34,12 +34,12 @@ return    o<<v.x<<"    "<<v.y<<"    "<<v.z;
 }
 
 //-----------------------------------------------------------------------------
-int StGrain::findAtomName(const string &aname__)
+int StGrain::findAtomName(const string &aname__) const
 {
 int apos=0;
 
             for(auto &atype :atomTypes){
-            std::string & aname(atype.name);
+            const std::string & aname(atype.name);
                 if( aname==aname__ )
                 return apos;
 
@@ -397,9 +397,46 @@ std::function<void (StAtom &a, StAtom &b)> updateNOfN;
 return true;
 }
 
+//-----------------------------------------------------------------------------
+
+
+class CSaveOptions{
+public:
+    virtual ~CSaveOptions() {  }
+    virtual bool check(const StAtom & ) { return true; }
+};
+//.........................................................
+class COptionsInterface: public CSaveOptions{
+protected:
+        CSaveOptions *cso;
+public:
+
+        COptionsInterface(CSaveOptions *cso__):cso(cso__) {  }
+};
+//.........................................................
+class COpt_AtomTypeIgnore: public COptionsInterface{
+
+public:
+        size_t type;
+        COpt_AtomTypeIgnore(CSaveOptions *cso):COptionsInterface(cso) { }
+
+        bool check(const StAtom & atom)
+        { return atom.atype!=type && cso->check(atom); }
+
+};
+//.........................................................
+class COpt_NumberOfNeighborsIgnore: public COptionsInterface{
+public:
+        size_t nOfn;
+        COpt_NumberOfNeighborsIgnore(CSaveOptions *cso): COptionsInterface(cso) {  }
+
+        bool check(const StAtom &atom)
+        { return atom.nOfn!=nOfn && cso->check(atom); }
+};
 
 //-----------------------------------------------------------------------------
-bool saveAtoms(string &fileName, const StGrain &grain, const size_t nOfB, EFTYPE ftype, EPNF pnf,const StBox &box)
+bool saveAtoms(string &fileName, const StGrain &grain, const size_t nOfB,
+               EFTYPE ftype, EPNF pnf, const StBox &box, const vector<string> &ignore)
 {
 fstream fout(fileName,ios::out);
 
@@ -414,6 +451,7 @@ const size_t numOfatoms=atoms.size();
 size_t nOfrows=0;
 std::function<bool(const StAtom &)> np_condition;
 std::function<string(const StAtom &)> atomNT;
+std::function<string(const StAtom &)> typeAcc;
 CProgress progress;
 
             fout<<"          "<<endl;
@@ -428,7 +466,7 @@ CProgress progress;
                     else{
                         if(pnf==EPNF::fcc)
                             {   np_condition=[](const StAtom &a){ return a.fcc;} ;
-                            fout<<"--- FCC verified atoms ---"<<endl; }
+                                fout<<"--- FCC verified atoms ---"<<endl; }
                         else
                             if(pnf==EPNF::nfcc)
                             {   np_condition=[](const StAtom &a){ return !a.fcc;} ;
@@ -436,7 +474,7 @@ CProgress progress;
                             else
                                 if(pnf==EPNF::zb)
                                 {   np_condition=[](const StAtom &a){ return a.zb;} ;
-                                fout<<"--- ZB verified atoms ---"<<endl; }
+                                    fout<<"--- ZB verified atoms ---"<<endl; }
                                 else
                                 {   np_condition=[](const StAtom &a){ return !a.zb;} ;
                                     fout<<"--- non ZB verified atoms ---"<<endl; }
@@ -449,6 +487,40 @@ CProgress progress;
             case EFTYPE::txyz:  atomNT=[](const StAtom &a) { return std::to_string(a.nOfn); } ; break;
             }
 
+CSaveOptions *cso=new CSaveOptions;
+vector<CSaveOptions *> ptr_cso;
+
+            ptr_cso.reserve(ignore.size()+1);
+            ptr_cso.push_back(cso);
+
+            if(!ignore.empty()){
+
+                    for(auto & iopt: ignore){
+                    const vector<string> toks{split<string>(iopt," \t")};
+
+                            if (toks[0]=="atype"){
+                            const int atype=grain.findAtomName(toks[1]);
+                                if(atype>=0){
+                                COpt_AtomTypeIgnore *ptr_at=new COpt_AtomTypeIgnore(ptr_cso.back());
+                                    ptr_at->type=atype;
+                                    ptr_cso.push_back(ptr_at);
+                                }
+                            }
+
+                            if (toks[0]=="nb"){
+                            COpt_NumberOfNeighborsIgnore *ptr_at=new COpt_NumberOfNeighborsIgnore(ptr_cso.back());
+                                    ptr_at->nOfn=std::stoi(toks[1]);
+                                    ptr_cso.push_back(ptr_at);
+
+                            }
+
+
+                    }//for
+            }//if
+
+
+
+
             if(numOfatoms>1e6){
                 progress.title=(" progress writing: ");
                 progress.start(numOfatoms);
@@ -456,6 +528,10 @@ CProgress progress;
 
             if(box.btype==StBox::IGN){ //
                 for(size_t i=0;i<numOfatoms;i++,progress++){
+
+                    if( !ptr_cso.back()->check(atoms[i]))
+                        continue;;
+
                     if(np_condition(atoms[i])){
                         fout<<atomNT(atoms[i])<<"    "
                             <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
@@ -466,7 +542,11 @@ CProgress progress;
             }
             else{
                 for(size_t i=0;i<numOfatoms;i++,progress++){
-                    if(np_condition(atoms[i]))
+
+                    if( !ptr_cso.back()->check(atoms[i]))
+                        continue;;
+
+                    if(np_condition(atoms[i]) )
                         if(box.isAtomInside(atoms[i])){
                             fout<<atomNT(atoms[i])<<"    "
                                 <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
@@ -483,6 +563,9 @@ CProgress progress;
 
             progress.stop();
             cout<<"\r";
+
+            for(auto &a: ptr_cso)
+                delete a;
 
 return true;
 }

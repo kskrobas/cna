@@ -84,6 +84,21 @@ size_t flineNr=0;
                 continue;
                 }
 
+                if(regex_match(fline,std::regex("nosave[[:s:]]+atype[[:s:]]+[[:print:]]+"))){
+                const std::string keyValue{fline.substr(fline.find("atype"))};
+
+                        sparams.ignoreKeyValue.emplace_back(keyValue);
+                continue;
+                }
+
+
+                if(regex_match(fline,std::regex("nosave[[:s:]]+nb[[:s:]]+[0-9]+"))){
+                const std::string keyValue{fline.substr(fline.find("nb"))};
+
+                        sparams.ignoreKeyValue.emplace_back(keyValue);
+                continue;
+                }
+
                 if(regex_match(fline,std::regex("mode[[:s:]]+(fcc|zb)"))){
                 vstring toks{split<string>(fline," ")};
 
@@ -188,11 +203,14 @@ size_t flineNr=0;
         }
         catch(int i){
                 fin.close();
+                errMsg(" line 206, exception, code: "+std::to_string(i));
                 return false;
         }
-
-
-
+        catch(...){
+                fin.close();
+                errMsg(" line 211, exception, code: unknown ");
+                return false;
+        }
 
 return true;
 }

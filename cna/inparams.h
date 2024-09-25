@@ -79,6 +79,7 @@ string *scmd,*sval;
 position *tol,*dst,*tolA;
 size_t *nb;
 StBox *box;
+vector<string> ignoreKeyValue;
 
 };
 

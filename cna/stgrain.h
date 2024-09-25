@@ -61,7 +61,7 @@ size_t id;
 size_t atype;  ///  position of an atom type in array
 double r2;
 vector<size_t> nID; //neighbor idh
-size_t nOfn;
+size_t nOfn;  //NumberOfNeighbors
 bool fcc=false;
 bool zb=false;
 
@@ -114,12 +114,13 @@ public:
 
     StGrain();
     bool openFile(const string & fileName);
+    int findAtomName(const string &aname__) const ;
 
 private:
     bool openXYZFile(const string &fileName);
     bool openLMPFile(const string &fileName);
 
-    int findAtomName(const string &aname__);
+
 };
 
 
@@ -130,6 +131,6 @@ bool CNA(StGrain &grain,cpos &distance, cpos &tolerance, cpos &toleranceA);
 
 
 bool saveAtoms(string &fileName, const StGrain &grain, const size_t nOfB,
-               EFTYPE ftype, EPNF pnf, const StBox &box);
+               EFTYPE ftype, EPNF pnf, const StBox &box,const vector<string> &ignore);
 
 #endif // STGRAIN_H

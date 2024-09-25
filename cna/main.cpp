@@ -320,13 +320,13 @@ StInParams inParams;
         if(verb && !outFileNames.negVerifiedAtoms.empty()){ infoMsg("save nv. outcomes");}
 
         for(auto & fn: outFileNames.negVerifiedAtoms)
-            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::neg,box);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::neg,box,inParams.ignoreKeyValue);
 
 
         if(verb && !outFileNames.posVerifiedAtoms.empty() ){ infoMsg("save pv. outcomes");}
 
         for(auto & fn: outFileNames.posVerifiedAtoms)
-            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::pos,box);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,EPNF::pos,box,inParams.ignoreKeyValue);
 
 
 
@@ -341,7 +341,7 @@ StInParams inParams;
                 }
                 infoMsg("save "+ltype+" atoms");
             }
-            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type,box);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type,box,inParams.ignoreKeyValue);
         }
 
 
@@ -355,7 +355,7 @@ StInParams inParams;
                 }
                 infoMsg("save "+ltype+" atoms");
             }
-            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type,box);
+            saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type,box,inParams.ignoreKeyValue);
         }
 
 
