@@ -435,6 +435,18 @@ public:
         bool check(const StAtom &atom)
         { return atom.nOfn!=nOfn && cso->check(atom); }
 };
+//.........................................................
+class COpt_OutsideBoxIgnore: public COptionsInterface{
+public:
+        StBox box;
+        COpt_OutsideBoxIgnore(CSaveOptions *cso): COptionsInterface(cso) {  }
+        COpt_OutsideBoxIgnore(CSaveOptions *cso,const StBox box__):COptionsInterface(cso),box(box__){ }
+
+        bool check(const StAtom &atom)
+        {return box.isAtomInside(atom) && cso->check(atom); }
+};
+//.........................................................
+
 
 //-----------------------------------------------------------------------------
 bool saveAtoms(string &fileName, const StGrain &grain, const size_t nOfB,
@@ -497,10 +509,13 @@ vector<CSaveOptions *> ptr_cso;
                     for(auto & iopt: ignore){
                     const vector<string> toks{split<string>(iopt," \t")};
 
-                            if (toks[0]=="atype" ){
-                            const int atype=grain.findAtomName(toks[1]);
-                                if(atype>=0)
+                            if (toks[0]=="atype" ){                            
+                                if(const int atype=grain.findAtomName(toks[1]); atype>=0)
                                     cso=new COpt_AtomTypeIgnore(ptr_cso.back(),atype);
+                                else{
+                                    warnMsg("nosave atype "+toks[1]+" unknown");
+                                    continue;
+                                }
                             }
 
                             if (toks[0]=="nb")
@@ -511,6 +526,10 @@ vector<CSaveOptions *> ptr_cso;
             }//if
 
 
+            if(box.btype!=StBox::IGN){
+                cso=new COpt_OutsideBoxIgnore(ptr_cso.back(),box);
+                ptr_cso.push_back(cso);
+            }
 
 
             if(numOfatoms>1e6){
@@ -518,35 +537,22 @@ vector<CSaveOptions *> ptr_cso;
                 progress.start(numOfatoms);
             }
 
-            if(box.btype==StBox::IGN){ //
-                for(size_t i=0;i<numOfatoms;i++,progress++){
+            /////////////////////////////////////////////////
+            /// save atoms
+            ///
+            for(size_t i=0;i<numOfatoms;i++,progress++){
 
-                    if( !ptr_cso.back()->check(atoms[i]))
-                        continue;;
+                if( !ptr_cso.back()->check(atoms[i]))
+                    continue;;
 
-                    if(np_condition(atoms[i])){
-                        fout<<atomNT(atoms[i])<<"    "
-                            <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
-                            <<"    "<<atoms[i].nOfn<<"    "<<atoms[i].fcc<<endl;
-                        nOfrows++;
-                    }
+                if(np_condition(atoms[i])){
+                    fout<<atomNT(atoms[i])<<"    "
+                        <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
+                        <<"    "<<atoms[i].nOfn<<endl;
+                    nOfrows++;
                 }
             }
-            else{
-                for(size_t i=0;i<numOfatoms;i++,progress++){
-
-                    if( !ptr_cso.back()->check(atoms[i]))
-                        continue;;
-
-                    if(np_condition(atoms[i]) )
-                        if(box.isAtomInside(atoms[i])){
-                            fout<<atomNT(atoms[i])<<"    "
-                                <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
-                                <<"    "<<atoms[i].nOfn<<"    "<<atoms[i].fcc<<endl;
-                            nOfrows++;
-                        }
-                    }
-                }
+            /////////////////////////////////////////////////////
 
 
             fout.seekg(0);
@@ -640,3 +646,37 @@ bool testZ=( (atom.z>zlo) & (atom.z<zhi) );
 
 return testX && testY && testZ;
 }
+
+
+/*
+if(box.btype==StBox::IGN){ //
+    for(size_t i=0;i<numOfatoms;i++,progress++){
+
+        if( !ptr_cso.back()->check(atoms[i]))
+            continue;;
+
+        if(np_condition(atoms[i])){
+            fout<<atomNT(atoms[i])<<"    "
+                <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
+                <<"    "<<atoms[i].nOfn<<"    "<<atoms[i].fcc<<endl;
+            nOfrows++;
+        }
+    }
+}
+else{
+    for(size_t i=0;i<numOfatoms;i++,progress++){
+
+        if( !ptr_cso.back()->check(atoms[i]))
+            continue;;
+
+        if(np_condition(atoms[i]) )
+            if(box.isAtomInside(atoms[i])){
+                fout<<atomNT(atoms[i])<<"    "
+                    <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
+                    <<"    "<<atoms[i].nOfn<<endl;
+                nOfrows++;
+            }
+        }
+    }
+    */
+
