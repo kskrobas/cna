@@ -419,6 +419,7 @@ class COpt_AtomTypeIgnore: public COptionsInterface{
 public:
         size_t type;
         COpt_AtomTypeIgnore(CSaveOptions *cso):COptionsInterface(cso) { }
+        COpt_AtomTypeIgnore(CSaveOptions *cso,const size_t type__):COptionsInterface(cso),type(type__) { }
 
         bool check(const StAtom & atom)
         { return atom.atype!=type && cso->check(atom); }
@@ -429,6 +430,7 @@ class COpt_NumberOfNeighborsIgnore: public COptionsInterface{
 public:
         size_t nOfn;
         COpt_NumberOfNeighborsIgnore(CSaveOptions *cso): COptionsInterface(cso) {  }
+        COpt_NumberOfNeighborsIgnore(CSaveOptions *cso,const size_t nOfn__): COptionsInterface(cso),nOfn(nOfn__) {  }
 
         bool check(const StAtom &atom)
         { return atom.nOfn!=nOfn && cso->check(atom); }
@@ -480,8 +482,6 @@ CProgress progress;
                                     fout<<"--- non ZB verified atoms ---"<<endl; }
                         }
             }
-
-
             switch (ftype){
             case EFTYPE::nxyz:  atomNT=[&grain](const StAtom &a) { return grain.atomTypes[a.atype].name; } ; break;
             case EFTYPE::txyz:  atomNT=[](const StAtom &a) { return std::to_string(a.nOfn); } ; break;
@@ -493,28 +493,20 @@ vector<CSaveOptions *> ptr_cso;
             ptr_cso.reserve(ignore.size()+1);
             ptr_cso.push_back(cso);
 
-            if(!ignore.empty()){
-
+            if(!ignore.empty()){            
                     for(auto & iopt: ignore){
                     const vector<string> toks{split<string>(iopt," \t")};
 
-                            if (toks[0]=="atype"){
+                            if (toks[0]=="atype" ){
                             const int atype=grain.findAtomName(toks[1]);
-                                if(atype>=0){
-                                COpt_AtomTypeIgnore *ptr_at=new COpt_AtomTypeIgnore(ptr_cso.back());
-                                    ptr_at->type=atype;
-                                    ptr_cso.push_back(ptr_at);
-                                }
+                                if(atype>=0)
+                                    cso=new COpt_AtomTypeIgnore(ptr_cso.back(),atype);
                             }
 
-                            if (toks[0]=="nb"){
-                            COpt_NumberOfNeighborsIgnore *ptr_at=new COpt_NumberOfNeighborsIgnore(ptr_cso.back());
-                                    ptr_at->nOfn=std::stoi(toks[1]);
-                                    ptr_cso.push_back(ptr_at);
+                            if (toks[0]=="nb")
+                                cso=new COpt_NumberOfNeighborsIgnore(ptr_cso.back(),std::stoi(toks[1]));
 
-                            }
-
-
+                            ptr_cso.push_back(cso);
                     }//for
             }//if
 

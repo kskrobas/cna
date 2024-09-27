@@ -49,7 +49,7 @@ void help()
     cerr<<" nbh - number of neighbors\n";
     cerr<<" dist <number> - distance to the 1st neighbor\n";
 
-    cerr<<"WARNING: using both command line and script instructions may cause unpredictable behaviour\n";
+    cerr<<"WARNING: using both command line and script instructions may cause unpredictable behavior\n";
     cerr<<" author/email: Kazimierz.Skrobas@ncbj.gov.pl\n";
     cerr<<" date: "<<__DATE__<<endl;
     cerr<<endl;
