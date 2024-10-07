@@ -5,6 +5,7 @@
 #include <omp.h>
 #include <functional>
 #include <sstream>
+#include <iomanip>
 
 template<typename T>
 vector<T>  split(const T & str, const T & delimiters)
@@ -176,7 +177,7 @@ fstream fin(fileName,ios::in);
         }
 
 CProgress progress;
-int nAtoms,row=2,atypes,id=-1;
+int nAtoms=0,row=2,atypes,id=-1;
 position cx,cy,cz;  // center position
 
             cx=cy=cz=0;
@@ -460,6 +461,8 @@ fstream fout(fileName,ios::out);
             }
 
 
+            cout<<"   save file "<<fileName<<endl;
+
 auto &atoms=grain.atoms;
 const size_t numOfatoms=atoms.size();
 size_t nOfrows=0;
@@ -542,13 +545,13 @@ vector<CSaveOptions *> ptr_cso;
             ///
             for(size_t i=0;i<numOfatoms;i++,progress++){
 
-                if( !ptr_cso.back()->check(atoms[i]))
-                    continue;;
+               // if( !ptr_cso.back()->check(atoms[i]))
+                //    continue;;
 
                 if(np_condition(atoms[i])){
                     fout<<atomNT(atoms[i])<<"    "
                         <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z
-                        <<"    "<<atoms[i].nOfn<<endl;
+                        <<"    "<<atoms[i].nOfn<<"    "<<atoms[i].id<<endl;
                     nOfrows++;
                 }
             }
@@ -570,7 +573,8 @@ return true;
 //-----------------------------------------------------------------------------
 void StAtom::FCC_NN_Angle_Analysis(const StGrain &grain, cpos &toleranceA)
 {
-        if(nOfn!=12) return;
+        if(nOfn!=12) {fcc=false; return;}
+
 
 const auto &atoms=grain.atoms;
 auto & refAtom=atoms[nID[0]];
@@ -585,7 +589,7 @@ cpos tol_60min=0.5-toleranceA;
 cpos tol_60max=0.5+toleranceA;
 cpos tol_90=toleranceA;
 cpos tol_180min=1-toleranceA;
-//cpos tol_180max=0=/.5+toleranceA;
+cpos tol_180max=1+toleranceA;
 
 
         for(size_t i=1;i<12;i++){
@@ -599,12 +603,38 @@ cpos tol_180min=1-toleranceA;
             else{
                 if(vc<tol_90) nOf_90++;
                 else
-                    if(tol_180min<vc &&vc<=1) nOf_180++;
+                    if(tol_180min<vc && vc<tol_180max) nOf_180++;
             }
 
         }
 
         fcc= (nOf_180==1  && nOf_90==2 && nOf_60==8);
+
+        /*
+        if(!fcc){
+
+            cout<<"\n\n fcc "<<x<<", "<<y<<", "<<z<<"   id="<<id<<"  "<<fcc<<endl;
+            cout<<"   "<<nOf_180<<",  "<<nOf_90<<", "<<nOf_60<<endl;
+            cout<<"==========================\n";
+
+
+            for(size_t i=1;i<12;i++){
+                b.x=atoms[nID[i]].x-x;
+                b.y=atoms[nID[i]].y-y;
+                b.z=atoms[nID[i]].z-z;
+
+                vc=std::fabs(cosa(ref,b));
+
+                cout<<"\n  "<<b.x<<", "<<b.y<<", "<<b.z<<",  "<<setprecision(18)<<vc;
+                if(tol_60min<vc && vc<tol_60max) cout<<" 60";
+                else{
+                    if(vc<tol_90) cout<<" 90";
+                    else
+                        if(tol_180min<vc &&  vc<tol_180max) cout<<" 180";
+                }
+
+            }
+        }*/
 }
 //-----------------------------------------------------------------------------
 void StAtom::ZB_NN_Angle_Analysis(const StGrain &grain, cpos &toleranceA)

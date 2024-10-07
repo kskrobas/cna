@@ -69,7 +69,7 @@ bool zb=false;
         {x=x__;y=y__;z=z__; atype=atype__; nOfn=0;}
 
     StAtom(cpos &x__, cpos &y__, cpos &z__, const size_t &atype__,const size_t id__)
-        {x=x__;y=y__;z=z__; atype=atype__; nOfn=0;id=id__;nID.reserve(20);}
+        {x=x__;y=y__;z=z__; atype=atype__; nOfn=0;id=id__;nID.reserve(24);}
 
     void set_r2(){r2=x*x+y*y+z*z;}
 

@@ -232,6 +232,7 @@ StInParams inParams;
 
         //---------------------------------------------------------
 
+        if(verb) { infoMsg("show stat");}
         if(printStat || ! outStatFileName.empty()){
         //auto cmp=[](const StAtom &a, const StAtom &b){return a.nOfn<b.nOfn;};
         vector<size_t> total_nOfn;

@@ -21,6 +21,7 @@ void help()
     cerr<<" -tol  <real number> - tolerance of distance \n";
     cerr<<" -tolA <real number> - tolerance of angle \n";
     cerr<<" -nb  <int number>  - number of neighbors\n";
+
     cerr<<" -op  <fileName>    - output file with positively verified atoms and format nxyz\n";
     cerr<<" -opt <fileName>    - output file with positively verified atoms and format txyz\n";
     cerr<<" -ofcc  <fileName>    - output file with fcc verified atoms and format nxyz\n";
