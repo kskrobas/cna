@@ -1,6 +1,8 @@
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
+#include <omp.h>
+#include <cmath>
 #include "stgrain.h"
 #include "colormsg.h"
 #include "help.h"
@@ -238,10 +240,20 @@ StInParams inParams;
         vector<size_t> total_nOfn;
         const size_t N=grain.atoms.size();
         size_t nOffcc=0,nOfzb=0,negAtoms=0;
-
-
-
-        constexpr int nN=20;
+        size_t max_nOfn=1;
+        constexpr size_t nOfcols=5;
+        
+                omp_set_num_threads(threads);
+                #pragma omp parallel for reduction(max:max_nOfn)
+                for(size_t i=0;i<N;i++){
+                    if(grain.atoms[i].nOfn>max_nOfn)
+                        max_nOfn=grain.atoms[i].nOfn;
+                }                
+                
+                max_nOfn=nOfcols*std::ceil( (float) max_nOfn/nOfcols);
+                
+                
+        const int nN(max_nOfn);
 
                 total_nOfn.resize(nN);
                 for(auto & v: total_nOfn) v=0;
@@ -257,7 +269,7 @@ StInParams inParams;
                     infoMsg("statistic data :");
 
                     for(size_t i=0;i<nN;i++){
-                        if(i%5==0){
+                        if(i%nOfcols==0){
                             if(i==0)
                                 { cout<<endl<<"┏"; for(size_t i=0;i<42;i++) cout<<vline; cout<<"┓\n┃"; }
                             else
