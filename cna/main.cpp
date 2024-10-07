@@ -238,6 +238,9 @@ StInParams inParams;
         vector<size_t> total_nOfn;
         const size_t N=grain.atoms.size();
         size_t nOffcc=0,nOfzb=0,negAtoms=0;
+
+
+
         constexpr int nN=20;
 
                 total_nOfn.resize(nN);
