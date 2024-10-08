@@ -108,7 +108,7 @@ public:
     vector<StAtomType> atomTypes;
     vector<StBoxPlane> boxWalls;
     int threads;
-    bool AAEnabled=false; //angle analysis on/off
+    bool FCCAAEnabled=false; //angle analysis on/off
     bool ZBAAEnabled=false;
 
 

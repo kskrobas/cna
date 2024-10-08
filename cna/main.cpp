@@ -72,7 +72,7 @@ StInParams inParams;
                 }
 
                 if(scmd=="-aafcc"){
-                    grain.AAEnabled=true;
+                    grain.FCCAAEnabled=true;
                 continue;
                 }
 
@@ -204,7 +204,7 @@ StInParams inParams;
             if(tol<0)               {warnMsg(" tolerance not given, assumed default value (0.1)"); tol=0.125;}
             if(grain.threads<1)     {errMsg(" number of threads musn't be less than 1"); throw 2;}
 
-            if(grain.AAEnabled && tolA <0) {errMsg(" angle tolerance (-tolA) not given "); throw 2;}
+            if(grain.FCCAAEnabled && tolA <0) {errMsg(" angle tolerance (-tolA) not given "); throw 2;}
 
         }
         catch(const int &err){
@@ -243,7 +243,7 @@ StInParams inParams;
         size_t max_nOfn=1;
         constexpr size_t nOfcols=5;
         
-                omp_set_num_threads(threads);
+                omp_set_num_threads(grain.threads);
                 #pragma omp parallel for reduction(max:max_nOfn)
                 for(size_t i=0;i<N;i++){
                     if(grain.atoms[i].nOfn>max_nOfn)
@@ -287,13 +287,13 @@ StInParams inParams;
                     cout<<endl<<"┗"; for(size_t i=0;i<42;i++) cout<<vline; cout<<"┛\n";
                 //------------------------------------
 
-                for(size_t i=0;i<nN;i++)
+                for(int i=0;i<nN;i++)
                     if(i!=nb)  negAtoms+=total_nOfn[i];
 
                 cout<<"\n total number of atoms: "<<N;
                 cout<<"\n number of neg. ver. atoms: "<<negAtoms;
 
-                    if(grain.AAEnabled)
+                    if(grain.FCCAAEnabled)
                         cout<<"\n fcc atoms : "<<nOffcc<<endl;
                     if(grain.ZBAAEnabled)
                         cout<<"\n zb atoms : "<<nOfzb<<endl;

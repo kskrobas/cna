@@ -108,7 +108,7 @@ position cx,cy,cz;  // center position
             int atype;
             std::function<StAtom(position &, position &, position &, int &, int &) > createAtom;
 
-                    if(AAEnabled || ZBAAEnabled){
+                    if(FCCAAEnabled || ZBAAEnabled){
                      createAtom=[](position &x, position &y, position &z , int &at, int &id)
                                     { return StAtom(x,y,z,at,id);} ;
                     }else{
@@ -231,7 +231,7 @@ position cx,cy,cz;  // center position
             position x,y,z;
             std::function<StAtom(position &, position &, position &, int &, int &) > createAtom;
 
-                    if(AAEnabled || ZBAAEnabled){
+                    if(FCCAAEnabled || ZBAAEnabled){
                      createAtom=[](position &x, position &y, position &z , int &at, int &id)
                                     { return StAtom(x,y,z,at,id);} ;
                     }else{
@@ -324,7 +324,7 @@ CProgress progress;
 
 std::function<void (StAtom &a, StAtom &b)> updateNOfN;
 
-                if(grain.AAEnabled || grain.ZBAAEnabled){
+                if(grain.FCCAAEnabled || grain.ZBAAEnabled){
                     updateNOfN=[](StAtom &a, StAtom &b)
                                 { a.nOfn++; b.nOfn++; a.nID.push_back(b.id); b.nID.push_back(a.id);};
                 }
@@ -381,7 +381,7 @@ std::function<void (StAtom &a, StAtom &b)> updateNOfN;
                 cout<<"\r";
                 cout.flush();
 
-                if(grain.AAEnabled){
+                if(grain.FCCAAEnabled){
                         #pragma omp parallel for
                         for(size_t i=0; i<N; i++)
                             grain.atoms[i].FCC_NN_Angle_Analysis(grain,toleranceA);
@@ -445,6 +445,17 @@ public:
 
         bool check(const StAtom &atom)
         {return box.isAtomInside(atom) && cso->check(atom); }
+};
+//.........................................................
+class COpt_NumberOfNeighborsRangeIgnore: public COptionsInterface{
+public:
+        size_t from,to;
+        COpt_NumberOfNeighborsRangeIgnore(CSaveOptions *cso): COptionsInterface(cso) {  }
+        COpt_NumberOfNeighborsRangeIgnore(CSaveOptions *cso,const size_t from__,const size_t to__)
+            : COptionsInterface(cso),from(from__),to(to__) {  }
+
+        bool check(const StAtom &atom)
+        { return !(atom.nOfn>=from && atom.nOfn<=to) && cso->check(atom); }
 };
 //.........................................................
 
@@ -521,8 +532,25 @@ vector<CSaveOptions *> ptr_cso;
                                 }
                             }
 
-                            if (toks[0]=="nb")
-                                cso=new COpt_NumberOfNeighborsIgnore(ptr_cso.back(),std::stoi(toks[1]));
+                            if (toks[0]=="nb"){
+                                if(toks[1].find(":")==string::npos)
+                                    cso=new COpt_NumberOfNeighborsIgnore(ptr_cso.back(),std::stoi(toks[1]));
+                                else{
+                                const vector<string> nb_minmax{split<string>(toks[1],":")};
+                                size_t nbmin,nbmax;
+
+                                        if(nb_minmax.size()==2){ nbmin=std::stoi(nb_minmax[0]); nbmax=std::stoi(nb_minmax[1]); }
+                                        else{
+                                            if(toks[1][0]==':'){ nbmin=0; nbmax=std::stoi(nb_minmax[0]);}
+                                            else{ nbmin=std::stoi(nb_minmax[0]); nbmax=0xffffffff;}
+                                        }
+
+                                        if(nbmax<nbmin){ size_t tmp=nbmin; nbmin=nbmax; nbmax=tmp;  }
+
+                                        cso=new COpt_NumberOfNeighborsRangeIgnore(ptr_cso.back(),nbmin,nbmax);
+
+                                }
+                            }
 
                             ptr_cso.push_back(cso);
                     }//for
@@ -545,8 +573,8 @@ vector<CSaveOptions *> ptr_cso;
             ///
             for(size_t i=0;i<numOfatoms;i++,progress++){
 
-               // if( !ptr_cso.back()->check(atoms[i]))
-                //    continue;;
+                if( !ptr_cso.back()->check(atoms[i]))
+                    continue;;
 
                 if(np_condition(atoms[i])){
                     fout<<atomNT(atoms[i])<<"    "

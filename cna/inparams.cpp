@@ -99,10 +99,17 @@ size_t flineNr=0;
                 continue;
                 }
 
+                if(regex_match(fline,std::regex("nosave[[:s:]]+nb[[:s:]]+([0-9]+)?:([0-9]+)?"))){
+                const std::string keyValue{fline.substr(fline.find("nb"))};
+
+                        sparams.ignoreKeyValue.emplace_back(keyValue);
+                continue;
+                }
+
                 if(regex_match(fline,std::regex("mode[[:s:]]+(fcc|zb)"))){
                 vstring toks{split<string>(fline," ")};
 
-                        sparams.grain->AAEnabled=(toks[1]=="fcc");
+                        sparams.grain->FCCAAEnabled=(toks[1]=="fcc");
                 continue;
                 }
 
