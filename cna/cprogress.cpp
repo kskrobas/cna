@@ -48,7 +48,7 @@ const float oneMin=60;
 
 CProgress::CProgress()
 {
-//int 𝛼𝛽𝛾𝛿=1;
+
 }
 
 
@@ -71,7 +71,7 @@ CProgress &CProgress::operator=(CProgress && progress__)
 
 
 
-std::string CProgress::title(" progress: ");
+std::string CProgress::title;
 size_t CProgress::stripeWidth=25;
 
 

@@ -1,11 +1,16 @@
 #ifndef INPARAMS_H
 #define INPARAMS_H
 
-#include "stgrain.h"
-
 #include <algorithm>
+#include <string>
 
 
+using namespace std;
+
+typedef double position;
+typedef const position cpos;
+typedef const double cdouble;
+typedef std::string str;
 
 
 //-----------------------------------------------------------------------------
@@ -55,6 +60,32 @@ return v;
 //-----------------------------------------------------------------------------
 
 
+//-----------------------------------------------------------------------------
+
+enum EFTYPE{nxyz,txyz};
+enum EPNF{pos,neg,fcc,nfcc,zb,nzb};
+
+
+
+struct StFileNameType{
+
+string fileName;
+EFTYPE f_type;
+EPNF   l_type;
+    StFileNameType(){ }
+    StFileNameType(string fn__,EFTYPE type__=EFTYPE::nxyz)
+        :fileName(fn__),f_type(type__){ }
+    StFileNameType(string fn__,EFTYPE type__,EPNF ltype__)
+        :fileName(fn__),f_type(type__),l_type(ltype__){ }
+
+    StFileNameType(EFTYPE type__,EPNF ltype__)
+        :f_type(type__),l_type(ltype__){ }
+
+    void operator() (EFTYPE type__,EPNF ltype__)
+            { f_type=type__; l_type=ltype__; }
+
+};
+
 
 //-----------------------------------------------------------------------------
 
@@ -66,12 +97,25 @@ vector<StFileNameType> negVerifiedAtoms;
 vector<StFileNameType> lattNegVerifiedAtoms;
     bool empty(){ return posVerifiedAtoms.empty() && negVerifiedAtoms.empty() && lattVerifiedAtoms.empty() && lattNegVerifiedAtoms.empty(); }
 };
+//------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
+struct StBox{
+enum ETYPE{IGN,CUB,CYL,SPH} btype=IGN;  //default ignore box boundaries
+    union{
+        struct{position xlo,xhi,ylo,yhi,zlo,zhi;};
+        position bounds[6];
+    };
+
+    bool isPointInside(const position &x,const position &y,const position &z ) const ;
+
+};
+
 
 //-----------------------------------------------------------------------------
 
 struct StInParams{
-StGrain *grain;
+
 string  *inFileName, *outStatFileName;
 StOutFileNames *outFileNames;
 bool *printStat;
@@ -80,8 +124,26 @@ position *tol,*dst,*tolA;
 size_t *nb;
 StBox *box;
 vector<string> ignoreKeyValue;
+string ignoreRegion;
+//enum EIGNORECNA{CNAOFF,CYL} ignorecna=CNAOFF;
+enum ANGLEDISTR{ADOFF,FCC,ZB} adistr=ADOFF;
+int threads=1;
+
+
 
 };
+
+
+class Cnocna{
+
+
+public:
+
+
+
+
+};
+
 
 //-----------------------------------------------------------------------------
 

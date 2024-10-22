@@ -5,13 +5,10 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-
+#include "inparams.h"
 using namespace std;
 
-typedef double position;
-typedef const position cpos;
-typedef const double cdouble;
-typedef std::string str;
+
 
 struct StAtom;
 class StGrain;
@@ -19,40 +16,9 @@ typedef vector<StAtom> vatoms;
 
 ostream & operator <<(ostream &o,const StAtom &a);
 
-enum EFTYPE{nxyz,txyz};
-enum EPNF{pos,neg,fcc,nfcc,zb,nzb};
 
 
-//-----------------------------------------------------------------------------
-struct StFileNameType{
 
-string fileName;
-EFTYPE f_type;
-EPNF   l_type;
-    StFileNameType(){ }
-    StFileNameType(string fn__,EFTYPE type__=EFTYPE::nxyz)
-        :fileName(fn__),f_type(type__){ }
-    StFileNameType(string fn__,EFTYPE type__,EPNF ltype__)
-        :fileName(fn__),f_type(type__),l_type(ltype__){ }
-
-    StFileNameType(EFTYPE type__,EPNF ltype__)
-        :f_type(type__),l_type(ltype__){ }
-
-    void operator() (EFTYPE type__,EPNF ltype__)
-            { f_type=type__; l_type=ltype__; }
-
-};
-
-//-----------------------------------------------------------------------------
-struct StBox{
-enum ETYPE{IGN,CUB,CYL,SPH} btype=IGN;  //default ignore box boundaries
-    union{
-        struct{position xlo,xhi,ylo,yhi,zlo,zhi;};
-        position bounds[6];
-    };
-
-    bool isAtomInside(const StAtom &atom) const ;
-};
 
 //-----------------------------------------------------------------------------
 struct StAtom{
@@ -64,6 +30,10 @@ vector<size_t> nID; //neighbor idh
 size_t nOfn;  //NumberOfNeighbors
 bool fcc=false;
 bool zb=false;
+
+
+enum EREGTYPE{OUT,BULK,MARGIN};
+size_t rtype;  /// position type: in/out/boundary of box
 
     StAtom(cpos &x__, cpos &y__, cpos &z__, const size_t &atype__)
         {x=x__;y=y__;z=z__; atype=atype__; nOfn=0;}
@@ -77,6 +47,9 @@ bool zb=false;
     void ZB_NN_Angle_Analysis(const StGrain &grain, cpos &tolerancA);
 
     friend ostream & operator <<(ostream &o,const StAtom &a);
+    void fullInfo();
+
+
 };
 
 struct StAtomType{
@@ -103,14 +76,12 @@ static double maxZ,minZ;
 class StGrain
 {
 public:
+    StInParams *inparams;
 
-    vatoms atoms;
-    vector<StAtomType> atomTypes;
+    vatoms atoms;    
+    vector<size_t> count_OBM; /// counter of outside, bulk and margin atoms
+    vector<StAtomType> atomTypes;        
     vector<StBoxPlane> boxWalls;
-    int threads;
-    bool FCCAAEnabled=false; //angle analysis on/off
-    bool ZBAAEnabled=false;
-
 
     StGrain();
     bool openFile(const string & fileName);

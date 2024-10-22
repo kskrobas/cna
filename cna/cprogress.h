@@ -68,7 +68,7 @@ public:
 
         static std::string linehead;
         static std::string title;
-        static size_t stripeWidth;
+        static size_t stripeWidth;        
 
 
 };

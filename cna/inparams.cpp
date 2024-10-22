@@ -84,6 +84,14 @@ size_t flineNr=0;
                 continue;
                 }
 
+
+                if(regex_match(fline,std::regex("nocna[[:s:]]+cyl[[:s:]]+rgt"+sPRE_NUMBER+sPRE_NUMBER))){
+                const std::string keyValue{fline.substr(fline.find("nocna"))};
+
+                        sparams.ignoreRegion=(keyValue);
+                continue;
+                }
+
                 if(regex_match(fline,std::regex("nosave[[:s:]]+atype[[:s:]]+[[:print:]]+"))){
                 const std::string keyValue{fline.substr(fline.find("atype"))};
 
@@ -109,7 +117,7 @@ size_t flineNr=0;
                 if(regex_match(fline,std::regex("mode[[:s:]]+(fcc|zb)"))){
                 vstring toks{split<string>(fline," ")};
 
-                        sparams.grain->FCCAAEnabled=(toks[1]=="fcc");
+                        sparams.adistr=(toks[1]=="fcc") ? StInParams::FCC: StInParams::ZB;
                 continue;
                 }
 
@@ -175,11 +183,10 @@ size_t flineNr=0;
                 }
 
 
-
                 if(regex_match(fline,std::regex("threads"+sUINT_NUMBER))){
                 vstring toks{split<string>(fline," ")};
 
-                        sparams.grain->threads=std::stoi(toks[1]);
+                        sparams.threads=std::stoi(toks[1]);
 
                 continue;
                 }
@@ -222,3 +229,12 @@ size_t flineNr=0;
 return true;
 }
 
+//-----------------------------------------------------------------------------
+bool StBox::isPointInside(const position &x, const position &y, const position &z) const
+{
+bool testX=( (x>xlo) & (x<xhi) );
+bool testY=( (y>ylo) & (y<yhi) );
+bool testZ=( (z>zlo) & (z<zhi) );
+
+return testX && testY && testZ;
+}

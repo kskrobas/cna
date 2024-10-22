@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
         }
 
 
-
+StInParams inParams;
 StGrain grain;
 StBox box;
 string inFileName,outStatFileName;
@@ -33,9 +33,7 @@ string scmd,sval;
 position tol=-1,dst=-1,tolA=-1;
 size_t nb=0;
 
-StInParams inParams;
 
-        inParams.grain=&grain;
         inParams.inFileName=&inFileName;
         inParams.outStatFileName=&outStatFileName;
         inParams.outFileNames=&outFileNames;
@@ -45,6 +43,8 @@ StInParams inParams;
         inParams.tolA=&tolA;
         inParams.nb=&nb;
         inParams.box=&box;
+
+        grain.inparams=&inParams;
 
 
         try{
@@ -72,12 +72,12 @@ StInParams inParams;
                 }
 
                 if(scmd=="-aafcc"){
-                    grain.FCCAAEnabled=true;
+                    inParams.adistr=StInParams::FCC;
                 continue;
                 }
 
                 if(scmd=="-aazb"){
-                    grain.ZBAAEnabled=true;
+                    inParams.adistr=StInParams::ZB;
                 continue;
                 }
 
@@ -189,7 +189,7 @@ StInParams inParams;
                 }
 
                 if(scmd=="-th"){
-                   grain.threads=std::stoi(sval);
+                   inParams.threads=std::stoi(sval);
                 continue;
                 }
                 //------------------------
@@ -202,9 +202,9 @@ StInParams inParams;
             if(inFileName.empty())  {errMsg(" input file not given "); throw 2;}
             if(outFileNames.empty()){errMsg(" output file not given ");throw 2;}
             if(tol<0)               {warnMsg(" tolerance not given, assumed default value (0.1)"); tol=0.125;}
-            if(grain.threads<1)     {errMsg(" number of threads musn't be less than 1"); throw 2;}
+            if(inParams.threads<1)     {errMsg(" number of threads musn't be less than 1"); throw 2;}
 
-            if(grain.FCCAAEnabled && tolA <0) {errMsg(" angle tolerance (-tolA) not given "); throw 2;}
+            if(inParams.adistr==StInParams::FCC && tolA <0) {errMsg(" angle tolerance (-tolA) not given "); throw 2;}
 
         }
         catch(const int &err){
@@ -235,15 +235,14 @@ StInParams inParams;
         //---------------------------------------------------------
 
         if(verb) { infoMsg("show stat");}
-        if(printStat || ! outStatFileName.empty()){
-        //auto cmp=[](const StAtom &a, const StAtom &b){return a.nOfn<b.nOfn;};
+        if(printStat || ! outStatFileName.empty()){        
         vector<size_t> total_nOfn;
         const size_t N=grain.atoms.size();
         size_t nOffcc=0,nOfzb=0,negAtoms=0;
         size_t max_nOfn=1;
         constexpr size_t nOfcols=5;
         
-                omp_set_num_threads(grain.threads);
+                omp_set_num_threads(inParams.threads);
                 #pragma omp parallel for reduction(max:max_nOfn)
                 for(size_t i=0;i<N;i++){
                     if(grain.atoms[i].nOfn>max_nOfn)
@@ -293,10 +292,17 @@ StInParams inParams;
                 cout<<"\n total number of atoms: "<<N;
                 cout<<"\n number of neg. ver. atoms: "<<negAtoms;
 
-                    if(grain.FCCAAEnabled)
+                    if(grain.inparams->adistr==StInParams::FCC)
                         cout<<"\n fcc atoms : "<<nOffcc<<endl;
-                    if(grain.ZBAAEnabled)
+                    if(grain.inparams->adistr==StInParams::ZB)
                         cout<<"\n zb atoms : "<<nOfzb<<endl;
+
+                    if(!grain.inparams->ignoreRegion.empty()){
+                        cout<<"\n number of atoms by the region";
+                        cout<<"\n margin  : "<<grain.count_OBM[2];
+                        cout<<"\n bulk  : "<<grain.count_OBM[1];
+                        cout<<"\n outside : "<<grain.count_OBM[0];
+                    }
 
                 cout<<endl;
                 }

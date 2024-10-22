@@ -7,23 +7,6 @@
 #include <sstream>
 #include <iomanip>
 
-template<typename T>
-vector<T>  split(const T & str, const T & delimiters)
-{
-vector<T> v;
-typename T::size_type start = 0;
-auto pos = str.find_first_of(delimiters, start);
-
-        while(pos != T::npos) {
-            if(pos != start) // ignore empty tokens
-                v.emplace_back(str, start, pos - start);
-            start = pos + 1;
-            pos = str.find_first_of(delimiters, start);
-        }
-        if(start < str.length()) // ignore trailing delimiter
-            v.emplace_back(str, start, str.length() - start); // add what's left of the string
-return v;
-}
 
 
 //-----------------------------------------------------------------------------
@@ -52,7 +35,7 @@ return -1;
 //---------------------------------------------------------
 StGrain::StGrain()
 {
-        threads=1;
+
 }
 //---------------------------------------------------------
 bool StGrain::openFile(const string &fileName)
@@ -69,6 +52,46 @@ bool StGrain::openFile(const string &fileName)
 return false;
 }
 //---------------------------------------------------------
+class CAtomValidation{
+
+public:
+        StAtom::EREGTYPE rtype;
+        virtual StAtom::EREGTYPE isAccepted(const position &x,const position &y,const position &z)=0;
+        virtual ~CAtomValidation(){  }
+};
+//---------------------------------------------------------
+
+class CAlwaysAccepted: public CAtomValidation{
+public:
+    CAlwaysAccepted(){ rtype=StAtom::EREGTYPE::BULK;}
+    StAtom::EREGTYPE isAccepted(const position &x,const position &y,const position &z)
+    { (void) x; (void)y; (void)z;
+        return StAtom::EREGTYPE::BULK;
+    }
+};
+//---------------------------------------------------------
+
+class CCylinder: public CAtomValidation{
+
+public:
+        position rmax2;
+        position rmaxMargin2;
+
+        CCylinder(const position r, const position margin){ rmax2=sqr(r);rmaxMargin2=sqr(r+margin); }
+        StAtom::EREGTYPE isAccepted(const position &x,const position &y,const position &z)
+        {  (void) z ;
+        const position r2=x*x+y*y;
+                if(r2<rmaxMargin2){ rtype=(r2<rmax2)? StAtom::EREGTYPE::BULK :
+                                                      StAtom::EREGTYPE::MARGIN;
+                                    return StAtom::EREGTYPE::BULK;}
+        return StAtom::EREGTYPE::OUT;
+        }
+
+};
+//---------------------------------------------------------
+
+
+
 bool StGrain::openXYZFile(const string &fileName)
 {
 fstream fin(fileName,ios::in);
@@ -81,9 +104,10 @@ fstream fin(fileName,ios::in);
 CProgress progress;
 int row=0,arows=-1;
 position cx,cy,cz;  // center position
+vatoms atomsTmp;
+CAtomValidation *atomValid=nullptr;
 
             cx=cy=cz=0;
-
 
             try{
                     fin.exceptions(ifstream::failbit | ifstream::badbit | ifstream::eofbit);
@@ -102,18 +126,31 @@ position cx,cy,cz;  // center position
 
                     atoms.clear();
                     atoms.reserve(arows);
+                    count_OBM.resize(3);
+                    for (auto & bma: count_OBM) bma=0;
+
 
             position x,y,z;
             string aname;
-            int atype;
-            std::function<StAtom(position &, position &, position &, int &, int &) > createAtom;
+            int atype,id;
+            std::function<StAtom(position &, position &, position &, int &, int ) > createAtom;
 
-                    if(FCCAAEnabled || ZBAAEnabled){
-                     createAtom=[](position &x, position &y, position &z , int &at, int &id)
+
+                    if(inparams->adistr!=StInParams::ADOFF){
+                     createAtom=[](position &x, position &y, position &z , int &at, int id)
                                     { return StAtom(x,y,z,at,id);} ;
                     }else{
-                     createAtom=[](position &x, position &y, position &z , int &at, int &id)
+                     createAtom=[](position &x, position &y, position &z , int &at, int id)
                                        { (void) id; return StAtom(x,y,z,at);} ;
+                    }
+
+
+                    if(inparams->ignoreRegion.empty()){
+                        atomValid=new CAlwaysAccepted();
+                    }
+                    else{
+                    vector<string> toks{split<string>(inparams->ignoreRegion," \t")};                    
+                        atomValid=new CCylinder(std::stod(toks[3]),std::stod(toks[4]));
                     }
 
 
@@ -126,8 +163,14 @@ position cx,cy,cz;  // center position
                     fin.exceptions(ifstream::failbit | ifstream::badbit);
 
 
-                    for(row=0 ;row<arows;row++,progress++){
+                    for(row=0,id=0;row<arows;row++,progress++){
                         fin>>aname>>x>>y>>z;
+
+                        if(atomValid->isAccepted(x,y,z)==StAtom::EREGTYPE::OUT){
+                            count_OBM[0]++;
+                        continue;
+                        }
+
                         cx+=x; cy+=y; cz+=z;
 
                         if( (atype=findAtomName(aname))<0){
@@ -135,36 +178,58 @@ position cx,cy,cz;  // center position
                             atype=atomTypes.size()-1;
                         }
 
-                        atoms.emplace_back(createAtom(x,y,z,atype,row));
+                        atoms.emplace_back(createAtom(x,y,z,atype,id++));
+                        atoms.back().rtype=atomValid->rtype;
+                        count_OBM[atomValid->rtype]++;
+
+                        //if(id%5==0) cout<<endl;
+                        //atoms.back().fullInfo();
                     }
 
                     atoms.shrink_to_fit();
                     fin.close();
-                    progress.stop();
-                    cout<<"\r";
-                    cout.flush();
+                    delete atomValid;
+                    atomValid=nullptr;
+
+
+
+                    if(atoms.empty()){
+                        infoMsg("empty set of atoms");
+                    return false;
+                    }
+
+
+                    if(!progress.title.empty()){
+                        progress.stop();
+
+                        cout<<"\r\n";
+                        cout.flush();
+                    }
 
             }
             catch(std::ifstream::failure &e){
                 cerr<<" exceptions during file procesing, row: "<<row<<", e.what(): "<<e.what()<<endl;
                 fin.close();
                 progress.stop();
+                delete atomValid;
                 return false;
             }
 
-cpos iN=1.0/arows;
+const int N=atoms.size();
+cpos iN=1.0/N;
 
             cx*=iN; cy*=iN; cz*=iN;
 
-            omp_set_num_threads(threads);
+            omp_set_num_threads(inparams->threads);
             #pragma omp parallel for
-            for(int i=0;i<arows;i++){
+            for(int i=0;i<N;i++){
                 atoms[i].x-=cx;
                 atoms[i].y-=cy;
                 atoms[i].z-=cz;
                 atoms[i].set_r2();
             }
-            return true;
+
+return true;
 }
 //-----------------------------------------------------------------------------
 bool StGrain::openLMPFile(const string &fileName)
@@ -231,7 +296,7 @@ position cx,cy,cz;  // center position
             position x,y,z;
             std::function<StAtom(position &, position &, position &, int &, int &) > createAtom;
 
-                    if(FCCAAEnabled || ZBAAEnabled){
+                    if(inparams->adistr!=StInParams::ADOFF){
                      createAtom=[](position &x, position &y, position &z , int &at, int &id)
                                     { return StAtom(x,y,z,at,id);} ;
                     }else{
@@ -242,7 +307,12 @@ position cx,cy,cz;  // center position
                 atoms.reserve(nAtoms);
                 row++;
 
-                for(int atom=0;atom<nAtoms;atom++,row++){
+                if(nAtoms>=1e6){
+                    progress.title=" progress reading: ";
+                    progress.start(nAtoms);
+                }
+
+                for(int atom=0;atom<nAtoms;atom++,row++,progress++){
                     fin>>id; // eof error detection
 
 
@@ -260,6 +330,10 @@ position cx,cy,cz;  // center position
                 }
 
                 atoms.shrink_to_fit();
+                fin.close();
+                progress.stop();
+                cout<<"\r\n";
+                cout.flush();
             }
             catch(std::ifstream::failure &e){
             std::stringstream sstream;
@@ -284,7 +358,7 @@ cpos iN=1.0/nAtoms;
 
             cx*=iN; cy*=iN; cz*=iN;
 
-            omp_set_num_threads(threads);
+            omp_set_num_threads(inparams->threads);
             #pragma omp parallel for
             for(int i=0;i<nAtoms;i++){
                 atoms[i].x-=cx;
@@ -324,7 +398,7 @@ CProgress progress;
 
 std::function<void (StAtom &a, StAtom &b)> updateNOfN;
 
-                if(grain.FCCAAEnabled || grain.ZBAAEnabled){
+                if(grain.inparams->adistr!=StInParams::ADOFF){
                     updateNOfN=[](StAtom &a, StAtom &b)
                                 { a.nOfn++; b.nOfn++; a.nID.push_back(b.id); b.nID.push_back(a.id);};
                 }
@@ -334,7 +408,7 @@ std::function<void (StAtom &a, StAtom &b)> updateNOfN;
                 }
 
 
-                omp_set_num_threads(grain.threads);
+                omp_set_num_threads(grain.inparams->threads);
                 #pragma omp parallel
                 {
                 size_t i,j;
@@ -378,22 +452,25 @@ std::function<void (StAtom &a, StAtom &b)> updateNOfN;
                 }
 
                 progress.stop();
-                cout<<"\r";
+                cout<<"\r\n";
                 cout.flush();
 
-                if(grain.FCCAAEnabled){
+                if(grain.inparams->adistr==StInParams::FCC){
                         #pragma omp parallel for
-                        for(size_t i=0; i<N; i++)
-                            grain.atoms[i].FCC_NN_Angle_Analysis(grain,toleranceA);
+                        for(size_t i=0;i<N; i++){
+                            if(grain.atoms[i].rtype==StAtom::EREGTYPE::BULK)
+                                grain.atoms[i].FCC_NN_Angle_Analysis(grain,toleranceA);
+                        }
                 }
                 else{
-                    if(grain.ZBAAEnabled){
+                    if(grain.inparams->adistr==StInParams::ZB){
                         #pragma omp parallel for
-                        for(size_t i=0;i<N;i++)
-                            grain.atoms[i].ZB_NN_Angle_Analysis(grain,toleranceA);
+                        for(size_t i=0;i<N;i++){
+                            if(grain.atoms[i].rtype==StAtom::EREGTYPE::BULK)
+                                grain.atoms[i].ZB_NN_Angle_Analysis(grain,toleranceA);
+                        }
                     }
                 }
-
 
 return true;
 }
@@ -444,7 +521,7 @@ public:
         COpt_OutsideBoxIgnore(CSaveOptions *cso,const StBox box__):COptionsInterface(cso),box(box__){ }
 
         bool check(const StAtom &atom)
-        {return box.isAtomInside(atom) && cso->check(atom); }
+        {return box.isPointInside(atom.x,atom.y,atom.z) && cso->check(atom); }
 };
 //.........................................................
 class COpt_NumberOfNeighborsRangeIgnore: public COptionsInterface{
@@ -456,6 +533,15 @@ public:
 
         bool check(const StAtom &atom)
         { return !(atom.nOfn>=from && atom.nOfn<=to) && cso->check(atom); }
+};
+
+class COpt_NoBulkIgnore: public COptionsInterface{
+public:
+        size_t from,to;
+        COpt_NoBulkIgnore(CSaveOptions *cso): COptionsInterface(cso) {  }
+
+        bool check(const StAtom &atom)
+        { return (atom.rtype==StAtom::EREGTYPE::BULK) && cso->check(atom); }
 };
 //.........................................................
 
@@ -516,6 +602,8 @@ CProgress progress;
 CSaveOptions *cso=new CSaveOptions;
 vector<CSaveOptions *> ptr_cso;
 
+
+            //------------------------------------------------------------------------------------
             ptr_cso.reserve(ignore.size()+1);
             ptr_cso.push_back(cso);
 
@@ -556,12 +644,14 @@ vector<CSaveOptions *> ptr_cso;
                     }//for
             }//if
 
-
             if(box.btype!=StBox::IGN){
                 cso=new COpt_OutsideBoxIgnore(ptr_cso.back(),box);
                 ptr_cso.push_back(cso);
             }
 
+            ptr_cso.push_back(new COpt_NoBulkIgnore(ptr_cso.back()));
+
+            //------------------------------------------------------------------------------------
 
             if(numOfatoms>1e6){
                 progress.title=(" progress writing: ");
@@ -695,15 +785,12 @@ cpos tol_109max=1.0/3.0+toleranceA;
             zb=(nOf_109 == 3);
 }
 
-//-----------------------------------------------------------------------------
-bool StBox::isAtomInside(const StAtom &atom) const
+void StAtom::fullInfo()
 {
-bool testX=( (atom.x>xlo) & (atom.x<xhi) );
-bool testY=( (atom.y>ylo) & (atom.y<yhi) );
-bool testZ=( (atom.z>zlo) & (atom.z<zhi) );
-
-return testX && testY && testZ;
+    cout<<(*this)<<" r2="<<r2<<", pt "<<rtype<<endl;
 }
+
+
 
 
 /*
