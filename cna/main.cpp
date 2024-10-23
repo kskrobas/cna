@@ -249,7 +249,7 @@ size_t nb=0;
                         max_nOfn=grain.atoms[i].nOfn;
                 }                
                 
-                max_nOfn=nOfcols*std::ceil( (float) max_nOfn/nOfcols);
+                max_nOfn=nOfcols*std::ceil( (float) (max_nOfn+1)/nOfcols);
                 
                 
         const int nN(max_nOfn);

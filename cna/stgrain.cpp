@@ -186,26 +186,19 @@ CAtomValidation *atomValid=nullptr;
                         //atoms.back().fullInfo();
                     }
 
+                    progress.stop();
+
                     atoms.shrink_to_fit();
                     fin.close();
                     delete atomValid;
-                    atomValid=nullptr;
-
-
 
                     if(atoms.empty()){
                         infoMsg("empty set of atoms");
                     return false;
                     }
 
-
-                    if(!progress.title.empty()){
-                        progress.stop();
-
-                        cout<<"\r\n";
-                        cout.flush();
-                    }
-
+                    cout<<"\r\n";
+                    cout.flush();
             }
             catch(std::ifstream::failure &e){
                 cerr<<" exceptions during file procesing, row: "<<row<<", e.what(): "<<e.what()<<endl;
@@ -242,8 +235,9 @@ fstream fin(fileName,ios::in);
         }
 
 CProgress progress;
-int nAtoms=0,row=2,atypes,id=-1;
+int nAtoms=0,row=2,atypes,id,atom,aid;
 position cx,cy,cz;  // center position
+CAtomValidation *atomValid=nullptr;
 
             cx=cy=cz=0;
 
@@ -294,27 +288,37 @@ position cx,cy,cz;  // center position
 
             int atype;
             position x,y,z;
-            std::function<StAtom(position &, position &, position &, int &, int &) > createAtom;
+            std::function<StAtom(position &, position &, position &, int &, int ) > createAtom;
 
                     if(inparams->adistr!=StInParams::ADOFF){
-                     createAtom=[](position &x, position &y, position &z , int &at, int &id)
+                     createAtom=[](position &x, position &y, position &z , int &at, int id)
                                     { return StAtom(x,y,z,at,id);} ;
                     }else{
-                     createAtom=[](position &x, position &y, position &z , int &at, int &id)
+                     createAtom=[](position &x, position &y, position &z , int &at, int id)
                                        { (void) id; return StAtom(x,y,z,at);} ;
                     }
 
                 atoms.reserve(nAtoms);
+                count_OBM.resize(3);
+                for (auto & bma: count_OBM) bma=0;
+
                 row++;
+
+                if(inparams->ignoreRegion.empty()){
+                    atomValid=new CAlwaysAccepted();
+                }
+                else{
+                vector<string> toks{split<string>(inparams->ignoreRegion," \t")};
+                    atomValid=new CCylinder(std::stod(toks[3]),std::stod(toks[4]));
+                }
 
                 if(nAtoms>=1e6){
                     progress.title=" progress reading: ";
                     progress.start(nAtoms);
                 }
 
-                for(int atom=0;atom<nAtoms;atom++,row++,progress++){
-                    fin>>id; // eof error detection
-
+                for(atom=0,id=0;atom<nAtoms;atom++,row++,progress++){
+                    fin>>aid; // eof error detection
 
                     std::getline(fin,fline);
                 vector<string> toks{split<string>(fline," \t")};
@@ -324,14 +328,29 @@ position cx,cy,cz;  // center position
                     y=std::stod(toks[2]);
                     z=std::stod(toks[3]);
 
+                    if(atomValid->isAccepted(x,y,z)==StAtom::EREGTYPE::OUT){
+                        count_OBM[0]++;
+                    continue;
+                    }
+
                     cx+=x; cy+=y; cz+=z;
 
-                    atoms.emplace_back(createAtom(x,y,z,atype,atom));
+                    atoms.emplace_back(createAtom(x,y,z,atype,id++));
+                    atoms.back().rtype=atomValid->rtype;
+                    count_OBM[atomValid->rtype]++;
                 }
+
+                progress.stop();
 
                 atoms.shrink_to_fit();
                 fin.close();
-                progress.stop();
+                delete atomValid;
+
+                if(atoms.empty()){
+                    infoMsg("empty set of atoms");
+                return false;
+                }
+
                 cout<<"\r\n";
                 cout.flush();
             }
@@ -341,6 +360,7 @@ position cx,cy,cz;  // center position
                 errMsg(sstream.str());
                 fin.close();
                 progress.stop();
+                delete atomValid;
             return false;
             }
             catch(const std::invalid_argument &ia){
@@ -349,18 +369,19 @@ position cx,cy,cz;  // center position
                 errMsg(sstream.str());
                 fin.close();
                 progress.stop();
+                delete atomValid;
             return false;
             }
 
 
-
-cpos iN=1.0/nAtoms;
+const int N=atoms.size();
+cpos iN=1.0/N;
 
             cx*=iN; cy*=iN; cz*=iN;
 
             omp_set_num_threads(inparams->threads);
             #pragma omp parallel for
-            for(int i=0;i<nAtoms;i++){
+            for(int i=0;i<N;i++){
                 atoms[i].x-=cx;
                 atoms[i].y-=cy;
                 atoms[i].z-=cz;
