@@ -201,7 +201,7 @@ size_t nb=0;
             if(dst<0)               {errMsg(" distance not given "); throw 2;}
             if(inFileName.empty())  {errMsg(" input file not given "); throw 2;}
             if(outFileNames.empty()){errMsg(" output file not given ");throw 2;}
-            if(tol<0)               {warnMsg(" tolerance not given, assumed default value (0.1)"); tol=0.125;}
+            if(tol<0)               {warnMsg(" tolerance not given, assumed default value (0.125)"); tol=0.125;}
             if(inParams.threads<1)     {errMsg(" number of threads musn't be less than 1"); throw 2;}
 
             if(inParams.adistr==StInParams::FCC && tolA <0) {errMsg(" angle tolerance (-tolA) not given "); throw 2;}

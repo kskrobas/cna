@@ -85,12 +85,14 @@ size_t flineNr=0;
                 }
 
 
-                if(regex_match(fline,std::regex("nocna[[:s:]]+cyl[[:s:]]+rgt"+sPRE_NUMBER+sPRE_NUMBER))){
+                if(regex_match(fline,std::regex("nocna[[:s:]]+cyl[[:s:]]+rgt("+sPRE_NUMBER+"){2}"+
+                                                "([[:s:]]+(bt|bh)("+sPRE_NUMBER+"){3}?"))){
                 const std::string keyValue{fline.substr(fline.find("nocna"))};
 
                         sparams.ignoreRegion=(keyValue);
                 continue;
                 }
+
 
                 if(regex_match(fline,std::regex("nosave[[:s:]]+atype[[:s:]]+[[:print:]]+"))){
                 const std::string keyValue{fline.substr(fline.find("atype"))};

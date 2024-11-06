@@ -74,10 +74,12 @@ public:
 class CCylinder: public CAtomValidation{
 
 public:
-        position rmax2;
-        position rmaxMargin2;
+        const position rmax2;
+        const position rmaxMargin2;
 
-        CCylinder(const position r, const position margin){ rmax2=sqr(r);rmaxMargin2=sqr(r+margin); }
+        CCylinder(const position r, const position margin):rmax2(r*r),rmaxMargin2(sqrt(r+margin))
+        { }
+
         StAtom::EREGTYPE isAccepted(const position &x,const position &y,const position &z)
         {  (void) z ;
         const position r2=x*x+y*y;
@@ -88,6 +90,33 @@ public:
         }
 
 };
+//---------------------------------------------------------
+class CCylinderBT: public CCylinder{
+
+public:
+        const position bottom;
+        const position top;
+        const position btmargin;
+
+
+        CCylinderBT(const position r, const position margin,const position bottom_, const position top_, const position btmargin_)
+            :CCylinder(r,margin),bottom(bottom_),top(top_),btmargin(btmargin_)
+        { }
+
+        StAtom::EREGTYPE isAccepted(const position &x,const position &y,const position &z)
+        {
+        const position r2=x*x+y*y;
+
+                if(bottom<z && z<top){
+                    if(r2<rmaxMargin2){
+                        rtype=(r2<rmax2)? StAtom::EREGTYPE::BULK : StAtom::EREGTYPE::MARGIN;
+                    return StAtom::EREGTYPE::BULK;
+                    }
+                }
+        return StAtom::EREGTYPE::OUT;
+        }
+};
+
 //---------------------------------------------------------
 
 
@@ -149,8 +178,19 @@ CAtomValidation *atomValid=nullptr;
                         atomValid=new CAlwaysAccepted();
                     }
                     else{
-                    vector<string> toks{split<string>(inparams->ignoreRegion," \t")};                    
-                        atomValid=new CCylinder(std::stod(toks[3]),std::stod(toks[4]));
+                    vector<string> toks{split<string>(inparams->ignoreRegion," \t")};
+                        if(toks.size()==5)
+                            atomValid=new CCylinder(std::stod(toks[3]),std::stod(toks[4]));
+                        else{
+                            if(toks[5]=="bt")
+                                atomValid=new CCylinderBT(std::stod(toks[3]),std::stod(toks[4]),
+                                                            std::stod(toks[6]),std::stod(toks[7]),
+                                                            std::stod(toks[8]));
+                            else
+                                atomValid=new CCylinderBT(std::stod(toks[3]),std::stod(toks[4]),
+                                                            std::stod(toks[6]),std::stod(toks[6])+std::stod(toks[7]),
+                                                            std::stod(toks[8]));
+                        }
                     }
 
 
@@ -309,7 +349,18 @@ CAtomValidation *atomValid=nullptr;
                 }
                 else{
                 vector<string> toks{split<string>(inparams->ignoreRegion," \t")};
-                    atomValid=new CCylinder(std::stod(toks[3]),std::stod(toks[4]));
+                    if(toks.size()==5)
+                        atomValid=new CCylinder(std::stod(toks[3]),std::stod(toks[4]));
+                    else{
+                        if(toks[5]=="bt")
+                            atomValid=new CCylinderBT(std::stod(toks[3]),std::stod(toks[4]),
+                                                        std::stod(toks[6]),std::stod(toks[7]),
+                                                        std::stod(toks[8]));
+                        else
+                            atomValid=new CCylinderBT(std::stod(toks[3]),std::stod(toks[4]),
+                                                        std::stod(toks[6]),std::stod(toks[6])+std::stod(toks[7]),
+                                                        std::stod(toks[8]));
+                    }
                 }
 
                 if(nAtoms>=1e6){
@@ -555,7 +606,7 @@ public:
         bool check(const StAtom &atom)
         { return !(atom.nOfn>=from && atom.nOfn<=to) && cso->check(atom); }
 };
-
+//.........................................................
 class COpt_NoBulkIgnore: public COptionsInterface{
 public:
         size_t from,to;
