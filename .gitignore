@@ -5,13 +5,6 @@ README~
 Debug/
 Release/
 Profile/
-test00/
-test01/
-test02/
-test02/*.xyz
-test03/
-test03/*.xyz
-test04/*
 cna/cna.pro*
 cna/qcna*
 cna/objrel/*
@@ -20,4 +13,6 @@ cna/Makefile.rel12*
 bin/
 examples/1/*.xyz
 examples/2/*.xyz
+*.zip
+test*
 

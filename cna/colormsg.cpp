@@ -3,9 +3,9 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-  */
 /*
  * colormsg.cpp
- * Copyright (C) 2019 Kazimierz Skrobas <kskrobas@unipress.waw.pl>
+* Copyright (C) 2019 Kazimierz Skrobas <kskrobas@unipress.waw.pl>
  *
- * npcl is free software: you can redistribute it and/or modify it
+ * "cna" is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.

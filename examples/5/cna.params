@@ -1,0 +1,36 @@
+#-inp cna.params -v 
+
+
+ifile atoms.xyz
+selreg cyl rgt 45  2.5  bt 0 75 2.5
+
+avedist  2.5    
+toldist 0.25
+tolang  0.2
+nbnum  12
+mode fcc
+
+
+print stat
+threads 8
+
+
+#nosave nb :7
+#nosave atype C
+#nosave nb 3
+#nosave nb 5
+#nosave nb 8
+
+# -on 
+save  n negver.xyz
+
+# -onfcct
+save  nfcct negverfcc.txyz
+
+#
+save p posver.xyz
+
+
+
+
+

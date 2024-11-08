@@ -1,0 +1,32 @@
+lp="3.54"
+lph=${lp}*0.5
+
+m="5"
+prc=0.01*${m}
+
+fileName="atoms.xyz"
+
+
+grain
+    struct uc
+    
+		ucp 
+		vx  ${lp}    0    0
+		vy   0   ${lp}    0
+		vz    0         0    ${lp}
+	
+	
+		Ni     0                      0             0
+		Ni     ${lph}  ${lph}      0
+		Ni    ${lph}        0             ${lph}
+		Ni    0                ${lph}    ${lph}
+		end
+		
+		replicate 25  25  50
+		remove  12 2.5 25
+
+		rename Ni Fe ${prc}
+		save ${fileName}
+
+		center geom
+end
