@@ -10,4 +10,6 @@ zbb atoms detection:  cna -i sphZb.xyz -d 1.53 -tol 0.25 -nb 4 -v  -aazb -tolA 0
 
 ![cna](pictures/cnares00.png)
 
+(visualization by Ovito https://www.ovito.org/)
+
 #------------------------------------------------------------------------------
