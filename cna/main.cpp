@@ -297,7 +297,7 @@ size_t nb=0;
                     if(grain.inparams->adistr==StInParams::ZB)
                         cout<<"\n zb atoms : "<<nOfzb<<endl;
 
-                    if(!grain.inparams->ignoreRegion.empty()){
+                    if(!grain.inparams->selectedRegion.empty()){
                         cout<<"\n number of atoms by the region";
                         cout<<"\n margin  : "<<grain.count_OBM[2];
                         cout<<"\n bulk  : "<<grain.count_OBM[1];

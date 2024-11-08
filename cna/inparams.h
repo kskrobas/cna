@@ -124,7 +124,7 @@ position *tol,*dst,*tolA;
 size_t *nb;
 StBox *box;
 vector<string> ignoreKeyValue;
-string ignoreRegion;
+string selectedRegion;
 //enum EIGNORECNA{CNAOFF,CYL} ignorecna=CNAOFF;
 enum ANGLEDISTR{ADOFF,FCC,ZB} adistr=ADOFF;
 int threads=1;

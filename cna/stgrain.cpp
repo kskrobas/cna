@@ -77,7 +77,7 @@ public:
         const position rmax2;
         const position rmaxMargin2;
 
-        CCylinder(const position r, const position margin):rmax2(r*r),rmaxMargin2(sqrt(r+margin))
+        CCylinder(const position r, const position margin):rmax2(r*r),rmaxMargin2(sqr(r+margin))
         { }
 
         StAtom::EREGTYPE isAccepted(const position &x,const position &y,const position &z)
@@ -92,6 +92,8 @@ public:
 };
 //---------------------------------------------------------
 class CCylinderBT: public CCylinder{
+private:
+        position bottomBT,topBT;
 
 public:
         const position bottom;
@@ -99,17 +101,21 @@ public:
         const position btmargin;
 
 
-        CCylinderBT(const position r, const position margin,const position bottom_, const position top_, const position btmargin_)
+        CCylinderBT(const position r, const position margin,
+                    const position bottom_, const position top_, const position btmargin_)
             :CCylinder(r,margin),bottom(bottom_),top(top_),btmargin(btmargin_)
-        { }
+        {   bottomBT=bottom-btmargin; topBT=top+btmargin;  }
 
         StAtom::EREGTYPE isAccepted(const position &x,const position &y,const position &z)
         {
-        const position r2=x*x+y*y;
-
-                if(bottom<z && z<top){
+                if(bottomBT<z && z<topBT){
+                const position r2=sqr(x)+sqr(y);
                     if(r2<rmaxMargin2){
-                        rtype=(r2<rmax2)? StAtom::EREGTYPE::BULK : StAtom::EREGTYPE::MARGIN;
+                        if(r2<rmax2 && bottom<z && z<top)
+                            rtype=StAtom::EREGTYPE::BULK;
+                        else
+                            rtype=StAtom::EREGTYPE::MARGIN;
+
                     return StAtom::EREGTYPE::BULK;
                     }
                 }
@@ -174,11 +180,11 @@ CAtomValidation *atomValid=nullptr;
                     }
 
 
-                    if(inparams->ignoreRegion.empty()){
+                    if(inparams->selectedRegion.empty()){
                         atomValid=new CAlwaysAccepted();
                     }
                     else{
-                    vector<string> toks{split<string>(inparams->ignoreRegion," \t")};
+                    vector<string> toks{split<string>(inparams->selectedRegion," \t")};
                         if(toks.size()==5)
                             atomValid=new CCylinder(std::stod(toks[3]),std::stod(toks[4]));
                         else{
@@ -344,11 +350,11 @@ CAtomValidation *atomValid=nullptr;
 
                 row++;
 
-                if(inparams->ignoreRegion.empty()){
+                if(inparams->selectedRegion.empty()){
                     atomValid=new CAlwaysAccepted();
                 }
                 else{
-                vector<string> toks{split<string>(inparams->ignoreRegion," \t")};
+                vector<string> toks{split<string>(inparams->selectedRegion," \t")};
                     if(toks.size()==5)
                         atomValid=new CCylinder(std::stod(toks[3]),std::stod(toks[4]));
                     else{
@@ -800,31 +806,6 @@ cpos tol_180max=1+toleranceA;
 
         fcc= (nOf_180==1  && nOf_90==2 && nOf_60==8);
 
-        /*
-        if(!fcc){
-
-            cout<<"\n\n fcc "<<x<<", "<<y<<", "<<z<<"   id="<<id<<"  "<<fcc<<endl;
-            cout<<"   "<<nOf_180<<",  "<<nOf_90<<", "<<nOf_60<<endl;
-            cout<<"==========================\n";
-
-
-            for(size_t i=1;i<12;i++){
-                b.x=atoms[nID[i]].x-x;
-                b.y=atoms[nID[i]].y-y;
-                b.z=atoms[nID[i]].z-z;
-
-                vc=std::fabs(cosa(ref,b));
-
-                cout<<"\n  "<<b.x<<", "<<b.y<<", "<<b.z<<",  "<<setprecision(18)<<vc;
-                if(tol_60min<vc && vc<tol_60max) cout<<" 60";
-                else{
-                    if(vc<tol_90) cout<<" 90";
-                    else
-                        if(tol_180min<vc &&  vc<tol_180max) cout<<" 180";
-                }
-
-            }
-        }*/
 }
 //-----------------------------------------------------------------------------
 void StAtom::ZB_NN_Angle_Analysis(const StGrain &grain, cpos &toleranceA)
@@ -857,12 +838,40 @@ cpos tol_109max=1.0/3.0+toleranceA;
             zb=(nOf_109 == 3);
 }
 
+//-----------------------------------------------------------------------------
 void StAtom::fullInfo()
 {
-    cout<<(*this)<<" r2="<<r2<<", pt "<<rtype<<endl;
+    cout<<(*this)<<"     r²="<<r2<<", pt "<<rtype<<endl;
 }
+//-----------------------------------------------------------------------------
 
 
+
+/*
+if(!fcc){
+
+    cout<<"\n\n fcc "<<x<<", "<<y<<", "<<z<<"   id="<<id<<"  "<<fcc<<endl;
+    cout<<"   "<<nOf_180<<",  "<<nOf_90<<", "<<nOf_60<<endl;
+    cout<<"==========================\n";
+
+
+    for(size_t i=1;i<12;i++){
+        b.x=atoms[nID[i]].x-x;
+        b.y=atoms[nID[i]].y-y;
+        b.z=atoms[nID[i]].z-z;
+
+        vc=std::fabs(cosa(ref,b));
+
+        cout<<"\n  "<<b.x<<", "<<b.y<<", "<<b.z<<",  "<<setprecision(18)<<vc;
+        if(tol_60min<vc && vc<tol_60max) cout<<" 60";
+        else{
+            if(vc<tol_90) cout<<" 90";
+            else
+                if(tol_180min<vc &&  vc<tol_180max) cout<<" 180";
+        }
+
+    }
+}*/
 
 
 /*
