@@ -8,7 +8,7 @@
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * npcl is distributed in the hope that it will be useful, but
+ * cna is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -732,7 +732,6 @@ vector<CSaveOptions *> ptr_cso;
                                         if(nbmax<nbmin){ size_t tmp=nbmin; nbmin=nbmax; nbmax=tmp;  }
 
                                         cso=new COpt_NumberOfNeighborsRangeIgnore(ptr_cso.back(),nbmin,nbmax);
-
                                 }
                             }
 
@@ -760,7 +759,7 @@ vector<CSaveOptions *> ptr_cso;
             for(size_t i=0;i<numOfatoms;i++,progress++){
 
                 if( !ptr_cso.back()->check(atoms[i]))
-                    continue;;
+                continue;
 
                 if(np_condition(atoms[i])){
                     fout<<atomNT(atoms[i])<<"    "
@@ -784,6 +783,60 @@ vector<CSaveOptions *> ptr_cso;
 
 return true;
 }
+//-----------------------------------------------------------------------------
+bool saveAtomsAndNeighbors(string &fileName, const StGrain &grain,
+                           const size_t nOfN,EFTYPE ftype)
+{
+fstream fout(fileName,ios::out);
+
+            if(!fout){
+                errMsg("file not saved "+fileName);
+            return false;
+            }
+
+
+            cout<<"   save file "<<fileName<<endl;
+
+auto &atoms=grain.atoms;
+const size_t numOfatoms=atoms.size();
+size_t nOfrows=0;
+std::function<string(const StAtom &)> atomNT;
+
+            switch (ftype){
+            case EFTYPE::nxyz:  atomNT=[&grain](const StAtom &a) { return grain.atomTypes[a.atype].name; } ; break;
+            case EFTYPE::txyz:  atomNT=[](const StAtom &a) { return std::to_string(a.nOfn); } ; break;
+            }
+
+
+            fout<<"          \n";
+            fout<<"#--- only atom(s) with "<<nOfN<<" neighbors\n";
+
+            for(size_t i=0;i<numOfatoms;i++){
+                if(atoms[i].nOfn==nOfN){
+                    fout<<atomNT(atoms[i])<<"    "
+                        <<atoms[i].x<<"    "<<atoms[i].y<<"    "<<atoms[i].z<<"    c    "<<atoms[i].id<<endl;
+
+                    for(auto &nid :atoms[i].nID){
+                    auto &nbatom=atoms[nid];
+
+                        fout<<atomNT(nbatom)<<"    "
+                           <<nbatom.x<<"    "<<nbatom.y<<"    "<<nbatom.z<<"    n    "<<atoms[i].id<<endl;
+                    }
+
+                    nOfrows+=(1+nOfN);
+                }
+            }
+
+
+            fout.seekg(0);
+            fout<<nOfrows;
+            fout.close();
+
+return true;
+}
+
+
+
 //-----------------------------------------------------------------------------
 void StAtom::FCC_NN_Angle_Analysis(const StGrain &grain, cpos &toleranceA)
 {

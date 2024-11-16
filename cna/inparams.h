@@ -8,7 +8,7 @@
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * npcl is distributed in the hope that it will be useful, but
+ * cna is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -82,14 +82,17 @@ return v;
 
 enum EFTYPE{nxyz,txyz};
 enum EPNF{pos,neg,fcc,nfcc,zb,nzb};
-
-
+enum EAAN{ignore,neighb};  // save atoms and neighborhood (awn)
 
 struct StFileNameType{
 
 string fileName;
 EFTYPE f_type;
 EPNF   l_type;
+
+EAAN   aan=EAAN::ignore;
+size_t nOfnb;
+
     StFileNameType(){ }
     StFileNameType(string fn__,EFTYPE type__=EFTYPE::nxyz)
         :fileName(fn__),f_type(type__){ }
@@ -98,6 +101,9 @@ EPNF   l_type;
 
     StFileNameType(EFTYPE type__,EPNF ltype__)
         :f_type(type__),l_type(ltype__){ }
+
+    StFileNameType(EAAN aan__,const size_t nOfnb__)
+        :aan(aan__),nOfnb(nOfnb__) { }
 
     void operator() (EFTYPE type__,EPNF ltype__)
             { f_type=type__; l_type=ltype__; }
@@ -113,7 +119,13 @@ vector<StFileNameType> posVerifiedAtoms;
 vector<StFileNameType> lattVerifiedAtoms;
 vector<StFileNameType> negVerifiedAtoms;
 vector<StFileNameType> lattNegVerifiedAtoms;
-    bool empty(){ return posVerifiedAtoms.empty() && negVerifiedAtoms.empty() && lattVerifiedAtoms.empty() && lattNegVerifiedAtoms.empty(); }
+vector<StFileNameType> selAtomsAndNeighbs;
+
+    bool empty(){ return posVerifiedAtoms.empty() &&
+                        negVerifiedAtoms.empty() &&
+                        lattVerifiedAtoms.empty() &&
+                        lattNegVerifiedAtoms.empty() &&
+                        selAtomsAndNeighbs.empty(); }
 };
 //------------------------------------------------------------------
 

@@ -8,7 +8,7 @@
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * npcl is distributed in the hope that it will be useful, but
+ * cna is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -396,6 +396,12 @@ size_t nb=0;
                 infoMsg("save "+ltype+" atoms");
             }
             saveAtoms(fn.fileName,grain,nb,fn.f_type,fn.l_type,box,inParams.ignoreKeyValue);
+        }
+
+
+        for(auto &fn:outFileNames.selAtomsAndNeighbs){
+            saveAtomsAndNeighbors(fn.fileName,grain,fn.nOfnb,fn.f_type);
+
         }
 
 

@@ -8,7 +8,7 @@
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * npcl is distributed in the hope that it will be useful, but
+ * cna is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -121,5 +121,7 @@ bool CNA(StGrain &grain,cpos &distance, cpos &tolerance, cpos &toleranceA);
 
 bool saveAtoms(string &fileName, const StGrain &grain, const size_t nOfB,
                EFTYPE ftype, EPNF pnf, const StBox &box,const vector<string> &ignore);
+bool saveAtomsAndNeighbors(string &fileName, const StGrain &grain,
+                           const size_t nOfN,EFTYPE ftype);
 
 #endif // STGRAIN_H

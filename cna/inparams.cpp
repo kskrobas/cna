@@ -8,7 +8,7 @@
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * npcl is distributed in the hope that it will be useful, but
+ * cna is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -27,7 +27,7 @@
 using namespace std;
 typedef vector<string> vstring;
 
-
+//-----------------------------------------------------------------------------
 #define RE_NUMBER_0  "[[:s:]]+[+-]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?"
 #define RE_NUMBER_1  "[[:s:]]*[+-]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?"
 #define PRE_NUMBER_0 "[[:s:]]+[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?"
@@ -46,7 +46,7 @@ const std::string sPROB_NUMBER(PROB_NUMBER);  //positive number for probabilty p
 const std::string sUINT_NUMBER(UINT_NUMBER);
 const std::string sVAR(VAR);
 
-
+//-----------------------------------------------------------------------------
 bool parseInputScript(const string &fileName, StInParams &sparams, bool &verb)
 {
 fstream fin(fileName,ios::in);
@@ -202,6 +202,20 @@ size_t flineNr=0;
                 }
 
 
+                if(regex_match(fline,std::regex("save[[:s:]]+awn(t)?"+sUINT_NUMBER+"[[:print:]]+"))){
+                vstring toks{split<string>(fline," ")};
+                const string _mode_{toks[1]};
+                StFileNameType fnt(EAAN::neighb,std::stoul(toks[2]));
+
+                        fnt.fileName=toks[3];
+                        fnt.f_type=(_mode_=="awnt") ? EFTYPE::txyz : EFTYPE::nxyz;
+
+                        sparams.outFileNames->selAtomsAndNeighbs.emplace_back(fnt);
+
+                continue;
+                }
+
+
                 if(regex_match(fline,std::regex("threads"+sUINT_NUMBER))){
                 vstring toks{split<string>(fline," ")};
 
@@ -227,22 +241,25 @@ size_t flineNr=0;
                 }
 
 
+                if(fline.find("nocna")!=string::npos){
+                    infoMsg("nocna ... is obsolete, use selreg  11-12-2024");
+                throw __LINE__;
+                }
 
-                errMsg("  unknown last command or its argument(s) ");
-                throw 1;
 
-
+                errMsg("  unknown last command or its argument(s)");
+                throw __LINE__;
             }
         }
         catch(int i){
-                fin.close();
-                errMsg(" line 206, exception, code: "+std::to_string(i));
-                return false;
+            fin.close();
+            errMsg(" exception, "+std::string(__FILE__)+", __LINE__ : "+std::to_string(i));
+        return false;
         }
         catch(...){
-                fin.close();
-                errMsg(" line 211, exception, code: unknown ");
-                return false;
+            fin.close();
+            errMsg(" exception, code: unknown ");
+        return false;
         }
 
 return true;
